@@ -12,9 +12,25 @@ Traditional API specs describe endpoints.
 
 ## Why
 
-Modern API and AI-agent workflows are fragmented across API docs, test scripts, workflow tools, approval systems, security policies, and audit logs.
+API operations are fragmented.
 
-**Open Contract Spec brings them into one contract.**
+* **OpenAPI** documents endpoints.
+* **Postman<sup>TM</sup>** tests requests.
+* **CI** validates changes.
+* **Workflow tools** automate actions.
+* **Security tools** enforce policies.
+* **Jira<sup>TM</sup>, Slack<sup>TM</sup>, and email** handle approvals.
+* **Logs** capture audits.
+
+The result is drift, duplicated work, weak governance, and unclear ownership.
+
+That was inefficient for developers.
+With AI agents and MCP tools executing real actions, it becomes a security risk.
+
+Agents can touch money, data, code, infrastructure, and customer operations. Without guardrails, they can trigger unauthorized access, destructive changes, privilege misuse, prompt-injection exploits, or unapproved production actions.
+
+**Open Contract Spec<sup>TM</sup> brings docs, tests, workflows, approvals, guardrails, and audit trails into one executable contract.**
+
 
 ---
 
