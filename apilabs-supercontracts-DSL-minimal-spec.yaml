@@ -1,5 +1,22 @@
-# SuperContracts™ MVP: executable API, workflow, policy, agent, and MCP contract.
+# =============================================================================
+# SUPERCONTRACTS™ MVP — DRAFT SPECIFICATION
+# Copyright © API Labs. All rights reserved.
+#
+# STATUS: Draft / evolving specification. Not a finalized 1.0 standard.
+# PURPOSE: Use this minimal spec for prototypes, developer onboarding, local
+#          execution, basic API workflows, tests, policies, approvals, agents,
+#          MCP exposure, and runtime evidence.
+# SOURCE OF TRUTH: This file defines the supported minimal structure. Examples
+#                  in documentation are illustrative and may omit required fields.
+# GUIDANCE: Start here unless enterprise-grade controls, deep observability,
+#           reusable policy domains, or advanced identity controls are required.
+# =============================================================================
 
+# -----------------------------------------------------------------------------
+# CONTRACT METADATA
+# WHEN TO USE: Always. Identifies the contract, version, owner, and purpose.
+# Keep IDs stable; increment version when behavior, policy, or schema changes.
+# -----------------------------------------------------------------------------
 contract:
   spec: supercontracts
   spec_version: "1.0"
@@ -9,6 +26,11 @@ contract:
   owner: fulfillment-platform
   tags: [orders, fulfillment]
 
+# -----------------------------------------------------------------------------
+# SERVICE DEFAULTS
+# WHEN TO USE: Define shared protocol defaults such as timeout, content type,
+# authentication, and the default execution environment.
+# -----------------------------------------------------------------------------
 service:
   name: Order Processing Service
   default_environment: development
@@ -17,6 +39,11 @@ service:
     content_type: application/json
     auth: order_bearer
 
+# -----------------------------------------------------------------------------
+# ENVIRONMENTS
+# WHEN TO USE: Use whenever the same contract runs against development, staging,
+# or production. Mark production explicitly and use secure tunnels for private APIs.
+# -----------------------------------------------------------------------------
 environments:
   production:
     base_url: https://api.fulfillment.io/v2
@@ -27,6 +54,11 @@ environments:
     base_url: http://localhost:8080/v2
     secure_tunnel: true
 
+# -----------------------------------------------------------------------------
+# AUTHENTICATION AND SECRETS
+# WHEN TO USE: Use for APIs requiring credentials. Reference external secret stores;
+# never place raw tokens, passwords, or production keys directly in this file.
+# -----------------------------------------------------------------------------
 auth:
   order_bearer:
     type: bearer
@@ -38,6 +70,11 @@ auth:
       development: env://ORDER_TOKEN
     redact: true
 
+# -----------------------------------------------------------------------------
+# SCHEMAS
+# WHEN TO USE: Define reusable input, output, identifier, and error structures.
+# Use schemas to validate requests and responses before and after execution.
+# -----------------------------------------------------------------------------
 schemas:
   OrderId:
     type: string
@@ -83,6 +120,11 @@ schemas:
       message: { type: string }
       correlation_id: { type: string }
 
+# -----------------------------------------------------------------------------
+# API OPERATIONS
+# WHEN TO USE: Define each callable API action, including method, path, risk,
+# authentication, inputs, responses, policies, and emitted events.
+# -----------------------------------------------------------------------------
 operations:
   place_order:
     method: POST
@@ -130,6 +172,11 @@ operations:
       - redact_sensitive_data
       - capture_evidence
 
+# -----------------------------------------------------------------------------
+# WORKFLOWS
+# WHEN TO USE: Use for multi-step business actions with dependencies, saved state,
+# assertions, retries, conditional behavior, or escalation paths.
+# -----------------------------------------------------------------------------
 workflows:
   order_lifecycle:
     description: Create an order and verify that it can be retrieved.
@@ -169,6 +216,11 @@ workflows:
         order_exists: true
         order_status: pending
 
+# -----------------------------------------------------------------------------
+# POLICIES
+# WHEN TO USE: Use to enforce approvals, retries, rate limits, redaction, and
+# evidence capture consistently across operations and workflows.
+# -----------------------------------------------------------------------------
 policies:
   defaults:
     fail_closed: true
@@ -231,6 +283,11 @@ policies:
       - authorization_tokens
       - hidden_model_reasoning
 
+# -----------------------------------------------------------------------------
+# AI AGENT GUARDRAILS
+# WHEN TO USE: Use when an AI agent can call operations or workflows. Explicitly
+# allow approved actions and environments; deny everything else by default.
+# -----------------------------------------------------------------------------
 agents:
   order_assistant:
     description: Support agent for creating and tracking orders.

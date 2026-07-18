@@ -1,7 +1,22 @@
-# SuperContracts™ — executable contract for APIs, MCP tools, workflows, and AI agents.
-# Optimized for deterministic execution, least-privilege access, approvals, testing,
-# runtime evidence, observability, and IDE/MCP integration.
+# =============================================================================
+# SUPERCONTRACTS™ ENTERPRISE — DRAFT SPECIFICATION
+# Copyright © API Labs. All rights reserved.
+#
+# STATUS: Draft / evolving specification. Not a finalized 1.0 standard.
+# PURPOSE: Use this enterprise spec for production systems, regulated workloads,
+#          least-privilege AI agents, MCP governance, human approvals, durable
+#          runtime evidence, observability, and IDE-based execution.
+# SOURCE OF TRUTH: This file defines the enterprise contract structure. Simplified
+#                  examples in documentation should not override this specification.
+# SECURITY: Never embed raw credentials. Keep enforcement fail-closed, deny
+#           unlisted tools and operations, and require approval for production writes.
+# =============================================================================
 
+# -----------------------------------------------------------------------------
+# CONTRACT METADATA
+# WHEN TO USE: Always. Establishes identity, ownership, lifecycle status, version,
+# and intent. Treat changes as governed source-code changes.
+# -----------------------------------------------------------------------------
 supercontract:
   spec_version: "1.0"
   id: order-processing
@@ -14,6 +29,11 @@ supercontract:
     workflows, MCP tools, and approved AI agents.
   tags: [orders, fulfillment, ecommerce]
 
+# -----------------------------------------------------------------------------
+# SERVICE DEFAULTS
+# WHEN TO USE: Define protocol and defaults shared by all operations, including
+# timeout, content type, authentication, and default environment.
+# -----------------------------------------------------------------------------
 service:
   name: Order Processing Service
   protocol: https
@@ -25,6 +45,8 @@ service:
 
 # -----------------------------------------------------------------------------
 # ENVIRONMENTS AND SECRETS
+# WHEN TO USE: Always for multi-environment or production execution. Separate
+# endpoints and secret references by environment; never store plaintext credentials.
 # -----------------------------------------------------------------------------
 environments:
   production:
@@ -62,6 +84,8 @@ security:
 
 # -----------------------------------------------------------------------------
 # DOMAIN SCHEMAS
+# WHEN TO USE: Define reusable request, response, identifier, and error contracts.
+# These schemas drive validation, testing, tool safety, and generated documentation.
 # -----------------------------------------------------------------------------
 schemas:
   OrderId:
@@ -128,6 +152,8 @@ schemas:
 
 # -----------------------------------------------------------------------------
 # API OPERATIONS
+# WHEN TO USE: Define every API action exposed to developers, agents, workflows,
+# or MCP tools. Assign effect and risk so policies can enforce appropriate controls.
 # -----------------------------------------------------------------------------
 operations:
   place_order:
@@ -203,6 +229,8 @@ operations:
 
 # -----------------------------------------------------------------------------
 # STATEFUL BUSINESS WORKFLOWS
+# WHEN TO USE: Model multi-step business outcomes that require sequencing, state,
+# assertions, retries, compensation, escalation, or post-action verification.
 # -----------------------------------------------------------------------------
 workflows:
   order_lifecycle:
@@ -259,6 +287,8 @@ workflows:
 
 # -----------------------------------------------------------------------------
 # ENFORCEMENT POLICIES
+# WHEN TO USE: Centralize reusable approvals, retries, limits, redaction, and
+# evidence rules. Prefer policy references over duplicating logic in operations.
 # -----------------------------------------------------------------------------
 policies:
   defaults:
@@ -331,6 +361,8 @@ policies:
 
 # -----------------------------------------------------------------------------
 # AI AGENT AND SLACK GUARDRAILS
+# WHEN TO USE: Required when autonomous agents or Slack™ bots can access real
+# systems. Explicitly constrain identities, tools, channels, actions, and environments.
 # -----------------------------------------------------------------------------
 agents:
   order_assistant:
@@ -379,6 +411,8 @@ agents:
 
 # -----------------------------------------------------------------------------
 # TESTS
+# WHEN TO USE: Validate operations, workflows, and policies before release. Include
+# positive, negative, edge, security, and approval-path tests for production contracts.
 # -----------------------------------------------------------------------------
 tests:
   fixtures:
@@ -426,6 +460,8 @@ tests:
 
 # -----------------------------------------------------------------------------
 # EVENTS
+# WHEN TO USE: Publish business or operational outcomes to downstream systems.
+# Keep event payloads minimal, versionable, and free of secrets or unnecessary PII.
 # -----------------------------------------------------------------------------
 events:
   order_created:
@@ -452,6 +488,8 @@ events:
 
 # -----------------------------------------------------------------------------
 # RUNTIME EVIDENCE AND OBSERVABILITY
+# WHEN TO USE: Required for production, audits, incident review, and debugging.
+# Capture decisions and traces while excluding credentials and hidden model reasoning.
 # -----------------------------------------------------------------------------
 runtime:
   correlation_id:
@@ -490,6 +528,8 @@ runtime:
 
 # -----------------------------------------------------------------------------
 # MCP AND IDE INTEGRATIONS
+# WHEN TO USE: Expose approved operations and workflows to Cursor™ or other MCP
+# clients. Use explicit exposure, strict validation, and deny-unlisted-tool controls.
 # -----------------------------------------------------------------------------
 integrations:
   mcp:
@@ -529,6 +569,8 @@ integrations:
 
 # -----------------------------------------------------------------------------
 # OPTIONAL INFRASTRUCTURE REFERENCES
+# WHEN TO USE: Add non-secret references when runtime behavior depends on storage,
+# messaging, queues, or other infrastructure. Keep deployment credentials elsewhere.
 # -----------------------------------------------------------------------------
 infrastructure:
   references:
