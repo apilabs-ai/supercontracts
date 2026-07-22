@@ -93,7 +93,60 @@ Allow an AI coding agent to create GitHub branches and pull requests, but preven
 
 ---
 
-## MCP Tool Safety
+## Cursor
+
+Connect SuperContracts to Cursor through MCP so your AI agent can discover contracts, execute workflows, inspect test history, and receive auto-generated AI context — without leaving the IDE.
+
+Every tool call runs through the same guardrails, approvals, and evidence capture defined in your contract.
+
+### Connect in Cursor
+
+1. Open **Cursor Settings → Features → MCP** and click **Add MCP Server**, or add a project-level `.cursor/mcp.json` file.
+2. Download the SuperContracts MCP configuration from [supercontracts.dev](https://supercontracts.dev) using **Add to Cursor**, or paste the config below after starting the local MCP server:
+
+```json
+{
+  "mcpServers": {
+    "supercontracts": {
+      "url": "http://127.0.0.1:8080/mcp"
+    }
+  }
+}
+```
+
+3. Start the SuperContracts MCP server and authenticate with your apilabs.ai workspace. A green indicator in Cursor confirms the tools are discovered.
+
+### Published MCP Tools
+
+| Tool | Purpose |
+| --- | --- |
+| `list_contracts` | List saved contract YAML files in API Contract Model, including nested explorer folders |
+| `get_contract` | Load the YAML content of a saved contract by `connection_id` |
+| `save_contract` | Create or update a contract YAML file in API Contract Model |
+| `run_contract` | Execute a contract inline — returns `run_id`, response, and optional AI context |
+| `list_test_runs` | Browse recent contract test run history with archive and status filters |
+| `get_test_run` | Fetch full run details including assertions, response body, and AI context |
+| `resolve_resource` | Resolve an apilabs ARN (file, secret, or method) to metadata without exposing secrets |
+
+**Typical flow:** `list_contracts` → `get_contract` → `run_contract` → `get_test_run`
+
+When `generate_ai_context` is enabled on `run_contract`, SuperContracts produces an `ai_context.md` artifact summarizing execution results, policy decisions, failed assertions, and remediation hints — ready for the Cursor agent to reason over on the next turn.
+
+### Working Demo
+
+Watch the end-to-end Cursor MCP demo: test a workflow API from the IDE, execute the contract, and feed auto-generated AI context back to the agent.
+
+**[Test Workflow APIs with AI Agent Contracts and Auto-Generated AI Context](https://youtu.be/GAt-V7jL4e0?si=lcWUECktH2ZkjOOw)**
+
+In the demo, Cursor:
+
+1. Calls `run_contract` with a SuperContracts YAML workflow.
+2. Captures run artifacts — `run.json`, `response.json`, and `ai_context.md`.
+3. Uses the generated AI context to explain failures, suggest fixes, and continue debugging — all inside the same chat.
+
+---
+
+## MCP Guardrails 
 
 Control how AI models interact with Model Context Protocol tools.
 
