@@ -1,12 +1,18 @@
-# SuperContracts from apilabs.ai - Open Contract Spec
+<p align="center">
+  <img src="apilabs_ai_supercontracts.png"
+       alt="apilabs.ai SuperContracts"
+       width="400">
+</p>
 
-**An open executable contract format for APIs, MCP tools, AI agents, workflows, approvals, tests, and guardrails.**
+<h1 align="center">SuperContracts</h1>
+
+<p align="center">
+  Executable contracts and guardrails for APIs, MCPs, and AI agents.
+</p>
 
 Open Contract Spec defines how software systems should be called, tested, secured, approved, and executed — in a format humans, tools, and AI agents can understand.
 
-Traditional API specs describe endpoints.
-
-**Open Contract Spec describes execution, policy, and safety.**
+Traditional API specs describe endpoints. **Open Contract Spec describes execution, policy, and safety.**
 
 ---
 
@@ -45,9 +51,7 @@ Agents can touch money, data, code, infrastructure, and customer operations. Wit
 
 ---
 
-## Use Cases & Code Recipes
-
-# SuperContracts MVP Core Capabilities
+# SuperContracts Core Capabilities & Code Recipes
 
 ## Cursor™ MCP Integration & Runtime Evidence
 
@@ -61,7 +65,7 @@ Connect SuperContracts to Cursor through MCP so your AI agent can discover contr
 
 Every tool call runs through the same guardrails, approvals, and evidence capture defined in your contract.
 
-### Connect in Cursor
+### Configure SuperContracts MCP in Cursor
 
 1. Open **Cursor Settings → Features → MCP** and click **Add MCP Server**, or add a project-level `.cursor/mcp.json` file.
 2. Download the SuperContracts MCP server from [apilabs-mcp-server](https://github.com/apilabs-ai/apilabs-mcp-server), or paste the config below after starting the local MCP server:
@@ -91,6 +95,9 @@ Every tool call runs through the same guardrails, approvals, and evidence captur
 | `resolve_resource` | Resolve an apilabs ARN (file, secret, or method) to metadata without exposing secrets |
 
 **Typical flow:** `list_contracts` → `get_contract` → `run_contract` → `get_test_run`
+
+Examples:
+TBA
 
 When `generate_ai_context` is enabled on `run_contract`, SuperContracts produces an `ai_context.md` artifact summarizing execution results, policy decisions, failed assertions, and remediation hints — ready for the Cursor agent to reason over on the next turn.
 
@@ -157,6 +164,22 @@ Permit the GitHub MCP server to create branches and pull requests, but block dir
 ### Example 2
 
 Allow the Supabase MCP server to run `SELECT` queries while blocking `DROP TABLE` and unrestricted `DELETE` operations.
+
+---
+
+## AI Agent Guardrails
+
+Define the systems, tools, data, and actions an AI agent is permitted to access.
+
+These guardrails keep autonomous agents within approved boundaries and prevent unauthorized changes to enterprise systems.
+
+### Example 1
+
+Allow an AI support agent to read Stripe customer and subscription information, but prevent it from issuing refunds.
+
+### Example 2
+
+Allow an AI coding agent to create GitHub branches and pull requests, but prevent it from deploying changes to production.
 
 ---
 
@@ -228,13 +251,6 @@ Execute an order-fulfillment workflow that:
 3. Charges the customer through Stripe.
 4. Creates the shipment through Shippo.
 5. Updates the order status.
-
-
-## Implementation
-
-Open Contract Spec is being implemented in **SuperContracts from [apilabs.ai](https://apilabs.ai)**.
-
-SuperContracts turns open contracts into executable API, MCP, and AI-agent workflows with runtime guardrails, approvals, testing, and evidence capture. Further, SuperContracts is deeply integrated via MCP in AI IDE tools like Cursor.
 
 Code Samples (TBA)
 
