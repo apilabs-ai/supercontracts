@@ -91,15 +91,27 @@ Every tool call runs through the same guardrails, approvals, and evidence captur
 | `save_contract` | Create or update a contract YAML file in API Contract Model |
 | `run_contract` | Execute a contract inline — returns `run_id`, response, and optional AI context |
 | `list_test_runs` | Browse recent contract test run history with archive and status filters |
-| `get_test_run` | Fetch full run details including assertions, response body, and AI context |
+| `get_run` | Fetch full run details including assertions, response body, and AI context |
 | `resolve_resource` | Resolve an apilabs ARN (file, secret, or method) to metadata without exposing secrets |
 
-**Typical flow:** `list_contracts` → `get_contract` → `run_contract` → `get_test_run`
+**Typical flow:** `list_contracts` → `get_contract` → `run_contract` → `get_run`
 
-Examples:
-TBA
+### Examples
 
-When `generate_ai_context` is enabled on `run_contract`, SuperContracts produces an `ai_context.md` artifact summarizing execution results, policy decisions, failed assertions, and remediation hints — ready for the Cursor agent to reason over on the next turn.
+Walk through a full Cursor session using an app-talk contract that syncs Google Forms submissions into Zoho CRM Leads:
+
+[google_forms_zoho_leads.yaml](https://github.com/apilabs-ai/apilabs_api_contract_recipes_pvt/blob/main/app_talk_contract/google_forms_zoho_leads.yaml)
+
+That contract defines an `apptalk` mapping (form fields → Zoho Lead fields), an `e2e` flow (`validate` → `create_config` → `test_sync`), and a test that asserts `test_sync.response.body.success == true`.
+
+1. Call `list_contracts` to locate `google_forms_zoho_leads`.
+2. Call `get_contract` with the contract’s `connection_id` to load the full YAML.
+3. Call `run_contract` to execute the `e2e` flow (`validate` → `create_config` → `test_sync`).
+4. Call `get_run` with the returned `run_id` to review assertions, response body, and failures.
+
+Optionally enable `generate_ai_context` on `run_contract` to produce an `ai_context.md` artifact for the next Cursor turn.
+
+You can reuse the same pattern for any saved contract: `list_contracts` → `get_contract` → `run_contract` → `get_run`.
 
 ### Working Demo
 
@@ -233,26 +245,75 @@ Centralize API behavior, dependencies, conditions, tests, and workflow steps in 
 
 This eliminates fragmented scripts and helps multi-step workflows run predictably and consistently.
 
-### Example 1
+### Example
 
-Test a customer onboarding workflow that:
+Execute a Supabase todos CRUD workflow that:
 
-1. Creates a user in Supabase.
-2. Creates a Stripe subscription.
-3. Sends a welcome email through SendGrid.
-4. Verifies the response from every API.
+1. Creates a todo (`POST /rest/v1/todos`).
+2. Lists todos (`GET /rest/v1/todos`).
+3. Gets the created todo by ID (`GET` with `id=eq.{create.response.body.0.id}`).
+4. Updates the todo title (`PATCH`).
+5. Deletes the todo (`DELETE`, expect `204`).
 
-### Example 2
+### Code Samples
 
-Execute an order-fulfillment workflow that:
+Chained flow — create → list → get → update → delete, with the todo ID passed from the create step:
 
-1. Retrieves the order.
-2. Validates inventory.
-3. Charges the customer through Stripe.
-4. Creates the shipment through Shippo.
-5. Updates the order status.
+```yaml
+flows:
+  todos_crud:
+    description: "Create → list → get → update → delete with chained todo ID."
+    steps:
+      - step: create
+        action: create_todo
+        inputs:
+          body:
+            title: "E2E Todo"
+            user_id: "5cb5b240-8bd4-4172-a219-e7561214697a"
 
-Code Samples (TBA)
+      - step: list
+        action: list_todos
+        inputs:
+          select: "*"
+
+      - step: get
+        action: get_todo
+        inputs:
+          id: "eq.{create.response.body.0.id}"
+          select: "*"
+
+      - step: update
+        action: update_todo
+        inputs:
+          id: "eq.{create.response.body.0.id}"
+          body:
+            title: "Updated E2E"
+
+      - step: delete
+        action: delete_todo
+        inputs:
+          id: "eq.{create.response.body.0.id}"
+```
+
+Assertions on status codes and response fields:
+
+```yaml
+tests:
+  todos_crud:
+    description: "Full todos CRUD with models exported to run context."
+    execute: todos_crud
+    expect:
+      create: 201
+      list: 200
+      get: 200
+      update: 200
+      delete: 204
+    verify:
+      - "create.response.body.0.id != null"
+      - "update.response.body.0.title == 'Updated E2E'"
+```
+
+See the complete recipe (models, routes, auth, and tests) in [supabase_crud.yaml](https://github.com/apilabs-ai/apilabs_api_contract_recipes_pvt/blob/main/supabase_crud.yaml).
 
 ---
 
