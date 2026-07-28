@@ -87,14 +87,14 @@ Every tool call runs through the same guardrails, approvals, and evidence captur
 | Tool | Purpose |
 | --- | --- |
 | `list_contracts` | List saved contract YAML files in API Contract Model, including nested explorer folders |
-| `sync_contract` | Load the YAML content of a saved contract by `connection_id` |
+| `get_contract` | Load the YAML content of a saved contract by `connection_id` |
 | `save_contract` | Create or update a contract YAML file in API Contract Model |
 | `run_contract` | Execute a contract inline — returns `run_id`, response, and optional AI context |
 | `list_test_runs` | Browse recent contract test run history with archive and status filters |
 | `get_run` | Fetch full run details including assertions, response body, and AI context |
 | `resolve_resource` | Resolve an apilabs ARN (file, secret, or method) to metadata without exposing secrets |
 
-**Typical flow:** `list_contracts` → `sync_contract ` → `run_contract` → `get_run`
+**Typical flow:** `list_contracts` → `get_contract` → `run_contract` → `get_run`
 
 ### Examples
 
@@ -104,13 +104,14 @@ Walk through a full Cursor session using an app-talk contract that syncs Google 
 
 That contract defines an `apptalk` mapping (form fields → Zoho Lead fields), an `e2e` flow (`validate` → `create_config` → `test_sync`), and a test that asserts `test_sync.response.body.success == true`.
 
-1. **Discover** — Ask Cursor to call `list_contracts` and locate `google_forms_zoho_leads` (or the folder that contains it).
-2. **Load** — Call `sync_contract` with the contract’s `connection_id` so the agent has the full YAML (providers, auth ARNs, field mappings, flows, and assertions).
-3. **Execute** — Call `run_contract` with that YAML (or the synced content). SuperContracts runs the `e2e` flow: validate the form/CRM config, create the sync config, then run `test_sync`.
-4. **Inspect** — Call `get_run` with the returned `run_id` to review assertions, response body, and any failures.
-5. **Reason (optional)** — When `generate_ai_context` is enabled on `run_contract`, SuperContracts produces an `ai_context.md` artifact summarizing execution results, policy decisions, failed assertions, and remediation hints — ready for the Cursor agent to reason over on the next turn.
+1. Call `list_contracts` to locate `google_forms_zoho_leads`.
+2. Call `get_contract` with the contract’s `connection_id` to load the full YAML.
+3. Call `run_contract` to execute the `e2e` flow (`validate` → `create_config` → `test_sync`).
+4. Call `get_run` with the returned `run_id` to review assertions, response body, and failures.
 
-You can reuse the same pattern for any saved contract: list → sync → run → inspect run evidence.
+Optionally enable `generate_ai_context` on `run_contract` to produce an `ai_context.md` artifact for the next Cursor turn.
+
+You can reuse the same pattern for any saved contract: `list_contracts` → `get_contract` → `run_contract` → `get_run`.
 
 ### Working Demo
 
@@ -244,16 +245,7 @@ Centralize API behavior, dependencies, conditions, tests, and workflow steps in 
 
 This eliminates fragmented scripts and helps multi-step workflows run predictably and consistently.
 
-### Example 1
-
-Test a customer onboarding workflow that:
-
-1. Creates a user in Supabase.
-2. Creates a Stripe subscription.
-3. Sends a welcome email through SendGrid.
-4. Verifies the response from every API.
-
-### Example 2
+### Example
 
 Execute a Supabase todos CRUD workflow that:
 
@@ -262,8 +254,6 @@ Execute a Supabase todos CRUD workflow that:
 3. Gets the created todo by ID (`GET` with `id=eq.{create.response.body.0.id}`).
 4. Updates the todo title (`PATCH`).
 5. Deletes the todo (`DELETE`, expect `204`).
-
-Full contract: [supabase_crud.yaml](https://github.com/apilabs-ai/apilabs_api_contract_recipes_pvt/blob/main/supabase_crud.yaml)
 
 ### Code Samples
 
