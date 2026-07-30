@@ -217,7 +217,7 @@ tests:
 See the complete recipe (models, routes, auth, and tests) in [supabase_crud.yaml](https://github.com/apilabs-ai/apilabs_api_contract_recipes_pvt/blob/main/supabase_crud.yaml).
 
 ---
-## Avoid Context Switching - Do more!!! Stay in Cursor IDE + Super Contracts MCP
+## Avoid Context Switching - Do more... Stay in Cursor IDE + Super Contracts MCP
 
 ---
 ## MCP Guardrails 
