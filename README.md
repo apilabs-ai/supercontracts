@@ -140,82 +140,6 @@ Create a new Supabase table for feature flags.
 SuperContracts validates the SQL, executes the migration, and records the executed SQL, user, timestamp, and result.
 
 ---
-## MCP Guardrails 
-
-Control how AI models interact with Model Context Protocol tools.
-
-SuperContracts acts as a policy-enforcement layer that blocks unauthorized, unsafe, or unverified tool calls before they reach connected systems.
-
-### Example 1
-
-Permit the GitHub MCP server to create branches and pull requests, but block direct pushes to the `main` branch.
-
-### Example 2
-
-Allow the Supabase MCP server to run `SELECT` queries while blocking `DROP TABLE` and unrestricted `DELETE` operations.
-
----
-
-## AI Agent Guardrails
-
-Define the systems, tools, data, and actions an AI agent is permitted to access.
-
-These guardrails keep autonomous agents within approved boundaries and prevent unauthorized changes to enterprise systems.
-
-### Example 1
-
-Allow an AI support agent to read Stripe customer and subscription information, but prevent it from issuing refunds.
-
-### Example 2
-
-Allow an AI coding agent to create GitHub branches and pull requests, but prevent it from deploying changes to production.
-
----
-
-## Production Action Approval
-
-Add human-in-the-loop controls for destructive, sensitive, or high-impact production actions.
-
-Operations such as database migrations, bulk deletions, refunds, or infrastructure changes cannot proceed without explicit authorization.
-
-### Example 1
-
-Require Finance approval before executing Stripe refunds above `$500`.
-
-### Example 2
-
-Require Database Administrator approval before applying a migration to a production Supabase database.
-
----
-
-## Slack™ Bot Guardrails
-
-Control what Slack™ bots and AI agents can read, post, approve, and execute from conversations.
-
-SuperContracts can restrict sensitive channels, block unauthorized commands, require approval for high-risk actions, validate the requesting user, and retain evidence of every bot-triggered operation.
-
-### Example 1
-
-An authorized finance user submits:
-
-```text
-/refund ORD-10482
-```
-
-SuperContracts validates the user and starts the Stripe refund workflow.
-
-### Example 2
-
-A user submits:
-
-```text
-/deploy production
-```
-
-SuperContracts requires Release Manager approval before triggering the GitHub Actions deployment.
-
----
-
 ## API Workflow Testing & Execution
 
 Centralize API behavior, dependencies, conditions, tests, and workflow steps in a single executable contract.
@@ -293,10 +217,85 @@ tests:
 See the complete recipe (models, routes, auth, and tests) in [supabase_crud.yaml](https://github.com/apilabs-ai/apilabs_api_contract_recipes_pvt/blob/main/supabase_crud.yaml).
 
 ---
+## MCP Guardrails 
 
-## Status
+Control how AI models interact with Model Context Protocol tools.
 
-Open Contract Spec is in early public development.
+SuperContracts acts as a policy-enforcement layer that blocks unauthorized, unsafe, or unverified tool calls before they reach connected systems.
+
+### Example 1
+
+Permit the GitHub MCP server to create branches and pull requests, but block direct pushes to the `main` branch.
+
+### Example 2
+
+Allow the Supabase MCP server to run `SELECT` queries while blocking `DROP TABLE` and unrestricted `DELETE` operations.
+
+---
+
+## AI Agent Guardrails
+
+Define the systems, tools, data, and actions an AI agent is permitted to access.
+
+These guardrails keep autonomous agents within approved boundaries and prevent unauthorized changes to enterprise systems.
+
+### Example 1
+
+Allow an AI support agent to read Stripe customer and subscription information, but prevent it from issuing refunds.
+
+### Example 2
+
+Allow an AI coding agent to create GitHub branches and pull requests, but prevent it from deploying changes to production.
+
+---
+
+## Production Action Approval
+
+Add human-in-the-loop controls for destructive, sensitive, or high-impact production actions.
+
+Operations such as database migrations, bulk deletions, refunds, or infrastructure changes cannot proceed without explicit authorization.
+
+### Example 1
+
+Require Finance approval before executing Stripe refunds above `$500`.
+
+### Example 2
+
+Require Database Administrator approval before applying a migration to a production Supabase database.
+
+---
+
+## Slack™ Bot Guardrails
+
+Control what Slack™ bots and AI agents can read, post, approve, and execute from conversations.
+
+SuperContracts can restrict sensitive channels, block unauthorized commands, require approval for high-risk actions, validate the requesting user, and retain evidence of every bot-triggered operation.
+
+### Example 1
+
+An authorized finance user submits:
+
+```text
+/refund ORD-10482
+```
+
+SuperContracts validates the user and starts the Stripe refund workflow.
+
+### Example 2
+
+A user submits:
+
+```text
+/deploy production
+```
+
+SuperContracts requires Release Manager approval before triggering the GitHub Actions deployment.
+
+---
+
+
+
+
 
 The goal is to create a neutral, open format for safe API, MCP, and AI-agent execution.
 
