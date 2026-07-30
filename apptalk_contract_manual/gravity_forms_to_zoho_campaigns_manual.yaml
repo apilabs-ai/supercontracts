@@ -1,0 +1,151 @@
+contract:
+  format: apilabs.ai
+  version: "1.0"
+  type: api-contract
+
+run: gravity_forms_to_zoho_campaigns
+
+apis:
+  gravity_forms:
+    name: "Gravity Forms API"
+    version: v2
+    base_url: "https://proactive-cod-76633b.gravitydemo.com"
+    description: "Gravity Forms — Form metadata and entries"
+    auth:
+      type: bearer
+      in: header
+      secret_arn: {add your form auth arn here}
+
+  zoho_crm:
+    name: "Zoho CRM API"
+    version: v3
+    base_url: "https://www.zohoapis.in"
+    description: "Zoho CRM — Campaigns module"
+    auth:
+      type: bearer
+      in: header
+      secret_arn: {add your crm auth arn here}
+
+models:
+  GravityForm:
+    description: "Gravity Form definition"
+    id: string
+    title: string
+    fields: array
+
+  GravityEntries:
+    description: "List of Gravity Form entries"
+    entries: array
+
+  ZohoCampaignCreate:
+    description: "Zoho CRM Campaign create payload"
+    data: array
+
+  ZohoCampaignResponse:
+    description: "Zoho CRM Campaign response"
+    data: array
+
+  ZohoCampaignSearch:
+    description: "Zoho CRM Campaign search"
+    criteria: string
+
+routes:
+  get_form:
+    api: gravity_forms
+    description: "Get form definition"
+    method: GET
+    path: /wp-json/gf/v2/forms/{formId}
+    headers:
+      Accept: application/json
+    params:
+      formId:
+        type: string
+        in: path
+        required: true
+    responses:
+      200: GravityForm
+
+  fetch_entries:
+    api: gravity_forms
+    description: "Fetch form entries"
+    method: GET
+    path: /wp-json/gf/v2/forms/{formId}/entries
+    headers:
+      Accept: application/json
+    params:
+      formId:
+        type: string
+        in: path
+        required: true
+    responses:
+      200: GravityEntries
+
+  search_campaign:
+    api: zoho_crm
+    description: "Search Campaign by Campaign Name"
+    method: GET
+    path: /crm/v3/Campaigns/search
+    params:
+      criteria:
+        type: string
+        in: query
+        required: true
+    responses:
+      200: ZohoCampaignResponse
+
+  create_campaign:
+    api: zoho_crm
+    description: "Create Campaign in Zoho CRM"
+    method: POST
+    path: /crm/v3/Campaigns
+    headers:
+      Content-Type: application/json
+    request:
+      body: ZohoCampaignCreate
+    responses:
+      201: ZohoCampaignResponse
+
+flows:
+  forms_to_crm:
+    description: "Get form → fetch entries → upsert Zoho Campaigns"
+    steps:
+      - step: get_form
+        action: get_form
+        inputs:
+          formId: "29"
+
+      - step: fetch
+        action: fetch_entries
+        inputs:
+          formId: "29"
+
+      - step: create
+        action: create_campaign
+        for_each: fetch.response.body.entries
+        as: item
+        upsert:
+          external_id: item.response.body.id
+          search_action: search_campaign
+          search_inputs:
+            criteria: "(Campaign_Name:equals:{item.response.body.1})"
+          on_found: skip
+          cache_scope: gravity_forms_to_zoho_campaigns
+        inputs:
+          body:
+            data:
+              - Campaign_Name: "item.response.body.1"
+                Status: "item.response.body.3"
+                Type: "item.response.body.4"
+                Start_Date: "item.response.body.5"
+                End_Date: "item.response.body.6"
+
+tests:
+  gravity_forms_to_zoho_campaigns:
+    description: "Sync Gravity Forms entries to Zoho CRM Campaigns"
+    execute: forms_to_crm
+    expect:
+      get_form: 200
+      fetch: 200
+      create: 201
+    verify:
+      - "fetch.response.body.entries.0.id != null"

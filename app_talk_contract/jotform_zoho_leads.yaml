@@ -1,0 +1,46 @@
+contract:
+  format: apilabs.ai
+  version: "1.0"
+  type: apptalk-contract
+
+run: jotform_zoho_leads
+
+apptalk:
+  name: jotform_zoho_leads_contract
+  form_provider: jotform
+  form_auth_arn: {add your form auth arn here}
+  form_id: "261723020835046"
+  form_name: jotform_lead_zoho
+  crm_provider: zoho
+  crm_auth_arn: {add your crm auth arn here}
+  crm_module: Leads
+  cleanup: true
+
+  mappings:
+    - sourceLabel: First Name
+      destFieldApiName: First_Name
+
+    - sourceLabel: Last Name
+      destFieldApiName: Last_Name
+
+    - sourceLabel: Email
+      destFieldApiName: Email
+
+    - sourceLabel: Company
+      destFieldApiName: Company
+
+    - sourceLabel: Phone
+      destFieldApiName: Phone
+
+flows:
+  e2e:
+    steps:
+      - step: validate
+      - step: create_config
+      - step: test_sync
+
+tests:
+  jotform_zoho_leads:
+    execute: e2e
+    verify:
+      - "test_sync.response.body.success == true"

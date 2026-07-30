@@ -1,0 +1,146 @@
+contract:
+  format: apilabs.ai
+  version: "1.0"
+  type: api-contract
+
+run: google_forms_to_bigin_contacts
+
+apis:
+  google_forms:
+    name: "Google Forms API"
+    version: v1
+    base_url: "https://forms.googleapis.com"
+    description: "Google Forms — form metadata and responses"
+    auth:
+      type: bearer
+      in: header
+      secret_arn: {add your form auth arn here}
+
+  bigin:
+    name: "Zoho Bigin API"
+    version: v2
+    base_url: "https://www.zohoapis.in"
+    description: "Zoho Bigin — Contacts module"
+    auth:
+      type: bearer
+      in: header
+      secret_arn: {add your crm auth arn here}
+
+models:
+  GoogleForm:
+    description: "Form definition with questions"
+    formId: string
+    info:
+      title: string
+    items: array
+
+  GoogleFormResponses:
+    description: "List of form submissions"
+    responses: array
+
+  BiginContactCreate:
+    description: "Zoho Bigin Contact create payload"
+    data: array
+
+  BiginContactResponse:
+    description: "Zoho Bigin create response"
+    data: array
+
+routes:
+  get_form:
+    api: google_forms
+    description: "Get form structure (question titles → questionIds)"
+    method: GET
+    path: /v1/forms/{formId}
+    headers:
+      Accept: application/json
+    params:
+      formId:
+        type: string
+        in: path
+        required: true
+    responses:
+      200: GoogleForm
+
+  fetch_form_responses:
+    api: google_forms
+    description: "Fetch all responses for a form"
+    method: GET
+    path: /v1/forms/{formId}/responses
+    headers:
+      Accept: application/json
+    params:
+      formId:
+        type: string
+        in: path
+        required: true
+    responses:
+      200: GoogleFormResponses
+
+  search_contact:
+    api: bigin
+    description: "Search Contact by Email"
+    method: GET
+    path: /bigin/v2/Contacts/search
+    params:
+      criteria:
+        type: string
+        in: query
+        required: true
+
+  create_contact:
+    api: bigin
+    description: "Create Contact in Zoho Bigin"
+    method: POST
+    path: /bigin/v2/Contacts
+    headers:
+      Content-Type: application/json
+    request:
+      body: BiginContactCreate
+    responses:
+      201: BiginContactResponse
+
+flows:
+  forms_to_bigin:
+    description: "Get form → fetch responses → upsert Bigin Contacts"
+    steps:
+      - step: get_form
+        action: get_form
+        inputs:
+          formId: "1njPRcTH7_v_o3SdxcSOwTiIDNcnUZ0k7VgRm2apGZgk"
+
+      - step: fetch
+        action: fetch_form_responses
+        inputs:
+          formId: "1njPRcTH7_v_o3SdxcSOwTiIDNcnUZ0k7VgRm2apGZgk"
+
+      - step: create
+        action: create_contact
+        for_each: fetch.response.body.responses
+        as: item
+        upsert:
+          external_id: item.response.body.responseId
+          search_action: search_contact
+          search_inputs:
+            criteria: "(Email:equals:{item.response.body.answers.7dde5cbd.textAnswers.answers.0.value})"
+          on_found: skip
+          cache_scope: google_forms_to_bigin_contacts
+        inputs:
+          body:
+            data:
+              - First_Name: "item.response.body.answers.3226303a.textAnswers.answers.0.value"
+                Last_Name: "item.response.body.answers.09f9c567.textAnswers.answers.0.value"
+                Email: "item.response.body.answers.7dde5cbd.textAnswers.answers.0.value"
+                Phone: "item.response.body.answers.77bfab25.textAnswers.answers.0.value"
+                Account_Name: "item.response.body.answers.6f3f9373.textAnswers.answers.0.value"
+
+tests:
+  google_forms_to_bigin_contacts:
+    description: "Sync Google Form responses to Zoho Bigin Contacts"
+    execute: forms_to_bigin
+    expect:
+      get_form: 200
+      fetch: 200
+      create: 201
+    verify:
+      - "fetch.response.body.responses.0.responseId != null"
