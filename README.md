@@ -217,6 +217,9 @@ tests:
 See the complete recipe (models, routes, auth, and tests) in [supabase_crud.yaml](https://github.com/apilabs-ai/apilabs_api_contract_recipes_pvt/blob/main/supabase_crud.yaml).
 
 ---
+## Avoid Context Switching - Do more by staying in your AI IDE like Cursor along with Supercontracts MCP
+
+---
 ## MCP Guardrails 
 
 Control how AI models interact with Model Context Protocol tools.
