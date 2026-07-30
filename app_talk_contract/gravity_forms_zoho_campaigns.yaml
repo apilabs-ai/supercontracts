@@ -1,0 +1,53 @@
+contract:
+  format: apilabs.ai
+  version: "1.0"
+  type: apptalk-contract
+
+run: gravity_forms_zoho_campaigns
+
+apptalk:
+  name: gravity_forms_zoho_campaigns_contract
+  form_provider: gravity_forms
+  form_id: "29"
+  form_name: Campaigns_Gravity
+
+  crm_provider: zoho
+  crm_auth_arn: {add your crm auth arn here}
+  crm_module: Campaigns
+
+  cleanup: true
+
+  auth_inputs:
+    gravity:
+      baseUrl: {add your gravity forms base url here}
+      consumerKey: {add your gravity forms consumer key here}
+      consumerSecret: {add your gravity forms consumer secret here}
+  mappings:
+    - sourceLabel: Campaign Name
+      destFieldApiName: Campaign_Name
+
+    - sourceLabel: Status
+      destFieldApiName: Status
+
+    - sourceLabel: Type
+      destFieldApiName: Type
+
+    - sourceLabel: Start Date
+      destFieldApiName: Start_Date
+
+    - sourceLabel: End Date
+      destFieldApiName: End_Date
+
+flows:
+  e2e:
+    steps:
+      - step: validate
+      - step: create_config
+      - step: test_sync
+
+tests:
+  gravity_forms_zoho_campaigns:
+    execute: e2e
+    verify:
+      - "test_sync.response.body.success == true"
+

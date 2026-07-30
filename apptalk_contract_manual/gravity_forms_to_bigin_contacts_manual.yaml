@@ -1,0 +1,151 @@
+contract:
+  format: apilabs.ai
+  version: "1.0"
+  type: api-contract
+
+run: gravity_forms_to_bigin_contacts
+
+apis:
+  gravity_forms:
+    name: "Gravity Forms API"
+    version: v2
+    base_url: "https://proactive-cod-76633b.gravitydemo.com"
+    description: "Gravity Forms — Form metadata and entries"
+    auth:
+      type: bearer
+      in: header
+      secret_arn: {add your form auth arn here}
+
+  bigin:
+    name: "Bigin API"
+    version: v2
+    base_url: "https://www.zohoapis.in/bigin/v2"
+    description: "Bigin CRM — Contacts module"
+    auth:
+      type: bearer
+      in: header
+      secret_arn: {add your crm auth arn here}
+
+models:
+  GravityForm:
+    description: "Gravity Form definition"
+    id: string
+    title: string
+    fields: array
+
+  GravityEntries:
+    description: "List of Gravity Form entries"
+    entries: array
+
+  BiginContactCreate:
+    description: "Bigin Contact create payload"
+    data: array
+
+  BiginContactResponse:
+    description: "Bigin Contact response"
+    data: array
+
+  BiginContactSearch:
+    description: "Bigin Contact search"
+    criteria: string
+
+routes:
+  get_form:
+    api: gravity_forms
+    description: "Get form definition"
+    method: GET
+    path: /wp-json/gf/v2/forms/{formId}
+    headers:
+      Accept: application/json
+    params:
+      formId:
+        type: string
+        in: path
+        required: true
+    responses:
+      200: GravityForm
+
+  fetch_entries:
+    api: gravity_forms
+    description: "Fetch form entries"
+    method: GET
+    path: /wp-json/gf/v2/forms/{formId}/entries
+    headers:
+      Accept: application/json
+    params:
+      formId:
+        type: string
+        in: path
+        required: true
+    responses:
+      200: GravityEntries
+
+  search_contact:
+    api: bigin
+    description: "Search Contact by Email"
+    method: GET
+    path: /Contacts/search
+    params:
+      criteria:
+        type: string
+        in: query
+        required: true
+    responses:
+      200: BiginContactResponse
+
+  create_contact:
+    api: bigin
+    description: "Create Contact in Bigin"
+    method: POST
+    path: /Contacts
+    headers:
+      Content-Type: application/json
+    request:
+      body: BiginContactCreate
+    responses:
+      201: BiginContactResponse
+
+flows:
+  forms_to_crm:
+    description: "Get form → fetch entries → upsert Bigin Contacts"
+    steps:
+      - step: get_form
+        action: get_form
+        inputs:
+          formId: "30"
+
+      - step: fetch
+        action: fetch_entries
+        inputs:
+          formId: "30"
+
+      - step: create
+        action: create_contact
+        for_each: fetch.response.body.entries
+        as: item
+        upsert:
+          external_id: item.response.body.id
+          search_action: search_contact
+          search_inputs:
+            criteria: "(Email:equals:{item.response.body.4})"
+          on_found: skip
+          cache_scope: gravity_forms_to_bigin_contacts
+        inputs:
+          body:
+            data:
+              - First_Name: "item.response.body.1"
+                Last_Name: "item.response.body.3"
+                Email: "item.response.body.4"
+                Mobile: "item.response.body.5"
+                Account_Name: "item.response.body.6"
+
+tests:
+  gravity_forms_to_bigin_contacts:
+    description: "Sync Gravity Forms entries to Bigin Contacts"
+    execute: forms_to_crm
+    expect:
+      get_form: 200
+      fetch: 200
+      create: 201
+    verify:
+      - "fetch.response.body.entries.0.id != null"

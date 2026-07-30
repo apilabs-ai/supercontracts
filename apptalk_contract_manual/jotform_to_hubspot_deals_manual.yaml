@@ -1,0 +1,155 @@
+contract:
+  format: apilabs.ai
+  version: "1.0"
+  type: api-contract
+
+run: jotform_to_hubspot_deals
+
+apis:
+  jotform:
+    name: "Jotform API"
+    version: v1
+    base_url: "https://api.jotform.com"
+    description: "Jotform — Form metadata and submissions"
+    auth:
+      type: bearer
+      in: header
+      secret_arn: {add your form auth arn here}
+
+  hubspot:
+    name: "HubSpot CRM API"
+    version: v3
+    base_url: "https://api.hubapi.com"
+    description: "HubSpot CRM — Deals"
+    auth:
+      type: bearer
+      in: header
+      secret_arn: {add your crm auth arn here}
+
+models:
+  Jotform:
+    description: "Jotform form definition"
+    id: string
+    title: string
+    questions: object
+
+  JotformSubmissions:
+    description: "List of form submissions"
+    content: array
+
+  HubSpotDealCreate:
+    description: "HubSpot Deal create payload"
+    properties: object
+
+  HubSpotDealResponse:
+    description: "HubSpot Deal response"
+    id: string
+    properties: object
+
+  HubSpotDealSearch:
+    description: "HubSpot Deal search payload"
+    filterGroups: array
+
+routes:
+  get_form:
+    api: jotform
+    description: "Get form definition"
+    method: GET
+    path: /form/{formId}
+    headers:
+      Accept: application/json
+    params:
+      formId:
+        type: string
+        in: path
+        required: true
+    responses:
+      200: Jotform
+
+  fetch_submissions:
+    api: jotform
+    description: "Fetch form submissions"
+    method: GET
+    path: /form/{formId}/submissions
+    headers:
+      Accept: application/json
+    params:
+      formId:
+        type: string
+        in: path
+        required: true
+    responses:
+      200: JotformSubmissions
+
+  search_deal:
+    api: hubspot
+    description: "Search Deal by Deal Name"
+    method: POST
+    path: /crm/v3/objects/deals/search
+    headers:
+      Content-Type: application/json
+    request:
+      body: HubSpotDealSearch
+    responses:
+      200: HubSpotDealResponse
+
+  create_deal:
+    api: hubspot
+    description: "Create Deal in HubSpot"
+    method: POST
+    path: /crm/v3/objects/deals
+    headers:
+      Content-Type: application/json
+    request:
+      body: HubSpotDealCreate
+    responses:
+      201: HubSpotDealResponse
+
+flows:
+  forms_to_hubspot:
+    description: "Get form → fetch submissions → upsert HubSpot Deals"
+    steps:
+      - step: get_form
+        action: get_form
+        inputs:
+          formId: "261733149121451"
+
+      - step: fetch
+        action: fetch_submissions
+        inputs:
+          formId: "261733149121451"
+
+      - step: create
+        action: create_deal
+        for_each: fetch.response.body.content
+        as: item
+        upsert:
+          external_id: item.response.body.id
+          search_action: search_deal
+          search_inputs:
+            filterGroups:
+              - filters:
+                  - propertyName: dealname
+                    operator: EQ
+                    value: "{item.response.body.answers.2.answer}"
+          on_found: skip
+          cache_scope: jotform_to_hubspot_deals
+        inputs:
+          body:
+            properties:
+              dealname: "item.response.body.answers.2.answer"
+              pipeline: "item.response.body.answers.3.answer"
+              dealstage: "item.response.body.answers.4.answer"
+              amount: "item.response.body.answers.5.answer"
+              closedate: "item.response.body.answers.6.answer.datetime"
+
+tests:
+  jotform_to_hubspot_deals:
+    description: "Sync Jotform submissions to HubSpot Deals"
+    execute: forms_to_hubspot
+    expect:
+      get_form: 200
+      fetch: 200
+      create: 201
+    verify:
+      - "fetch.response.body.content.0.id != null"

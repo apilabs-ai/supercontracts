@@ -1,0 +1,48 @@
+contract:
+  format: apilabs.ai
+  version: "1.0"
+  type: apptalk-contract
+
+run: jotform_bigin_products
+
+apptalk:
+  name: jotform_bigin_products_contract
+  form_provider: jotform
+  form_auth_arn: {add your form auth arn here}
+  form_id: "261723414363049"
+  form_name: product_collection
+
+  crm_provider: bigin
+  crm_auth_arn: {add your crm auth arn here}
+  crm_module: Products
+
+  cleanup: true
+
+  mappings:
+    - sourceLabel: Product Name
+      destFieldApiName: Product_Name
+
+    - sourceLabel: Product Code
+      destFieldApiName: Product_Code
+
+    - sourceLabel: Product Category
+      destFieldApiName: Product_Category
+
+    - sourceLabel: Unit Price
+      destFieldApiName: Unit_Price
+
+    - sourceLabel: Description
+      destFieldApiName: Description
+
+flows:
+  e2e:
+    steps:
+      - step: validate
+      - step: create_config
+      - step: test_sync
+
+tests:
+  jotform_bigin_products:
+    execute: e2e
+    verify:
+      - "test_sync.response.body.success == true"
