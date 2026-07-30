@@ -55,12 +55,6 @@ Agents can touch money, data, code, infrastructure, and customer operations. Wit
 
 ## Cursor™ MCP Integration & Runtime Evidence
 
-Bring SuperContracts directly into Cursor™ through MCP, enabling developers and AI agents to discover, execute, test, and govern APIs and workflows from the IDE.
-
-Every action captures requests, responses, policy decisions, approvals, actors, timestamps, and execution traces for auditability, compliance, monitoring, and debugging.
-
-## Cursor
-
 Connect SuperContracts to Cursor through MCP so your AI agent can discover contracts, execute workflows, inspect test history, and receive auto-generated AI context — without leaving the IDE.
 
 Every tool call runs through the same guardrails, approvals, and evidence capture defined in your contract.
