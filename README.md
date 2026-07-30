@@ -146,23 +146,6 @@ Create a new Supabase table for feature flags.
 SuperContracts validates the SQL, executes the migration, and records the executed SQL, user, timestamp, and result.
 
 ---
-
-## AI Agent Guardrails
-
-Define the systems, tools, data, and actions an AI agent is permitted to access.
-
-These guardrails keep autonomous agents within approved boundaries and prevent unauthorized changes to enterprise systems.
-
-### Example 1
-
-Allow an AI support agent to read Stripe customer and subscription information, but prevent it from issuing refunds.
-
-### Example 2
-
-Allow an AI coding agent to create GitHub branches and pull requests, but prevent it from deploying changes to production.
-
----
-
 ## MCP Guardrails 
 
 Control how AI models interact with Model Context Protocol tools.
