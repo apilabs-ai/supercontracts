@@ -307,3 +307,8 @@ The goal is to create a neutral, open format for safe API, MCP, and AI-agent exe
 ## License
 
 Apache-2.0
+
+## Support
+
+Join Discord Channel
+https://discord.com/invite/rVC2YMQH4
