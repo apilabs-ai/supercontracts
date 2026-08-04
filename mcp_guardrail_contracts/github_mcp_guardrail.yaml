@@ -1,0 +1,76 @@
+# Demo: SUCO guarded-service SuperContract (ALLOW/BLOCK).
+#
+# Two modes:
+#   1. Single-action  — set top-level action: / args: (legacy)
+#   2. Multi-step flow — set flow: block; each step is evaluated + executed in order.
+#      First BLOCK stops the flow immediately.
+#
+# Request fields (MCP invoke_guarded) still override when passed.
+
+supercontract: github_mcp_guardrails
+version: "0.1.0"
+
+# Multi-step flow: create branch → update README → open PR
+# Comment this out and use action:/args: for single-action mode.
+mode: execute   # change to execute when ready to run against GitHub
+flow:
+  - label: "Create feature branch"
+    action: create_branch
+    args:
+      branch: feature/demo
+      sha: main   # resolved to latest SHA by the GitHub REST handler
+
+  - label: "Update README on feature branch"
+    action: modify_file
+    args:
+      branch: feature/demo
+      path: README.md
+      content: "# SuperContracts demo — updated by guarded flow"
+      message: "docs: update README via guarded flow"
+
+  - label: "Open pull request"
+    action: create_pull_request
+    args:
+      title: "[SUCO] Guarded flow demo PR"
+      head: feature/demo
+      base: main
+      body: "Opened automatically by the SuperContracts guarded flow."
+
+service:
+  name: github
+  binding:
+    repository: hirenfl98/supercontracts-demo
+  connector:
+    type: rest
+    auth_secret: {add your github auth arn here}
+
+tools:
+  - name: create_branch
+    upstream_tool: create_branch
+  - name: modify_file
+    upstream_tool: create_or_update_file
+  - name: create_pull_request
+    upstream_tool: create_pull_request
+  - name: push
+    upstream_tool: push_files
+
+guardrails:
+  - id: block_push_to_main
+    when: action == "push" && branch == "main"
+    decision: BLOCK
+    reason: Direct pushes to main are not allowed.
+
+  - id: allow_create_branch
+    when: action == "create_branch"
+    decision: ALLOW
+
+  - id: allow_modify_feature_branch
+    when: action == "modify_file" && branch != "main"
+    decision: ALLOW
+
+  - id: allow_create_pull_request
+    when: action == "create_pull_request"
+    decision: ALLOW
+
+default:
+  decision: BLOCK
