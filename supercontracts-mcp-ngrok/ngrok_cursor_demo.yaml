@@ -1,0 +1,212 @@
+api:
+  name: "Milkat Bazaar API"
+  version: "v1"
+  base_url: "https://dismantle-splendid-rash.ngrok-free.dev"
+  description: "Local Milkat Bazaar backend via ngrok — seller property create/list/publish."
+
+auth:
+  type: bearer
+  in: header
+  secret_arn: "{add your auth arn here}"
+
+models:
+  AuthLogin:
+    phone: string
+    password: string
+
+  AuthTokenResponse:
+    success: boolean
+    message: string
+    data: object
+
+  PropertyCreate:
+    title: string
+    listing_type: string
+    property_type: string
+    price: integer
+    city: string
+    area: string
+    bhk: integer
+    sqft: integer
+    furnishing: string
+    amenities: array
+    description: string
+    status: string
+
+  PropertyCreateResponse:
+    success: boolean
+    message: string
+    data: object
+
+  PropertyListResponse:
+    success: boolean
+    message: string
+    data: object
+
+  PropertyDetail:
+    id: string
+    title: string
+    price: integer
+    city: string
+    area: string
+    status: string
+
+  PublishResponse:
+    success: boolean
+    message: string
+    data: object
+
+  GenericResponse:
+    description: "Generic JSON success envelope"
+    success: boolean
+    message: string
+    data: object  
+
+routes:
+  health:
+    description: "Backend health"
+    method: GET
+    path: /health
+    response:
+      200: GenericResponse
+
+  login:
+    description: "Login (optional; JWT usually pre-stored as secret)"
+    method: POST
+    path: /v1/auth/login
+    headers:
+      Content-Type: application/json
+    request:
+      body: AuthLogin
+    response:
+      200: AuthTokenResponse
+
+  me:
+    description: "Current user"
+    method: GET
+    path: /v1/auth/me
+    response:
+      200: GenericResponse
+
+  create_seller_property:
+    description: "Create seller property (draft)"
+    method: POST
+    path: /v1/seller/properties
+    headers:
+      Content-Type: application/json
+    request:
+      body: PropertyCreate
+    response:
+      201: PropertyCreateResponse
+
+  list_seller_properties:
+    description: "List my seller properties"
+    method: GET
+    path: /v1/seller/properties
+    params:
+      page:
+        type: string
+        in: query
+        required: false
+      pageSize:
+        type: string
+        in: query
+        required: false
+    response:
+      200: PropertyListResponse
+
+  get_property:
+    description: "Public get property by id"
+    method: GET
+    path: /v1/properties/{id}
+    params:
+      id:
+        type: string
+        in: path
+        required: true
+    response:
+      200: PropertyDetail
+
+  publish_property:
+    description: "Publish property (draft → live)"
+    method: POST
+    path: /v1/seller/properties/{id}/publish
+    params:
+      id:
+        type: string
+        in: path
+        required: true
+    response:
+      200: PublishResponse
+
+  list_public_properties:
+    description: "Public property list"
+    method: GET
+    path: /v1/properties/
+    params:
+      listingType:
+        type: string
+        in: query
+        required: false
+    response:
+      200: GenericResponse
+
+flows:
+  milkat_property_demo:
+    description: "Me → create property → list → get → publish → list again (real DB entry)"
+    steps:
+      - step: me
+        action: me
+
+      - step: create
+        action: create_seller_property
+        inputs:
+          body:
+            title: "SuperContracts Demo 2BHK"
+            listing_type: "rent"
+            property_type: "flat"
+            price: 45000
+            city: "Ahmedabad"
+            area: "Thaltej"
+            bhk: 2
+            sqft: 850
+            furnishing: "furnished"
+            amenities: ["parking", "lift"]
+            description: "Created via Cursor + SuperContracts MCP + ngrok"
+            status: "draft"
+
+      - step: list_mine
+        action: list_seller_properties
+        inputs:
+          page: "1"
+          pageSize: "20"
+
+      - step: get
+        action: get_property
+        inputs:
+          id: "{create.response.body.data.id}"
+
+      - step: publish
+        action: publish_property
+        inputs:
+          id: "{create.response.body.data.id}"
+
+      - step: list_public
+        action: list_public_properties
+        inputs:
+          listingType: "rent"
+
+tests:
+  milkat_property_demo:
+    description: "Create and publish a Milkat property via ngrok local backend"
+    execute: milkat_property_demo
+    expect:
+      me: 200
+      create: 201
+      list_mine: 200
+      get: 200
+      publish: 200
+      list_public: 200
+    verify:
+      - "create.response.body.data.id != null"
+      - "publish.response.body.data.status == 'live'"
