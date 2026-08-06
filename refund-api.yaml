@@ -1,0 +1,91 @@
+# Runtime-compatible API Labs contract for MCP v1.2.3.
+contract:
+  format: apilabs.ai
+  version: "1.0"
+  type: api-contract
+
+run: refund_regression_suite
+
+apis:
+  refund_api:
+    name: Refund Demo API
+    version: v1
+    base_url: https://facilities-export-audit-eventually.trycloudflare.com
+    description: Local API used to detect an accidental refund-rule regression.
+    auth:
+      type: bearer
+      in: header
+      secret_arn: arn:apilabs:secret:d98cb2b1-05fc-437e-b2f3-08705cf513a3
+
+models:
+  RefundRequest:
+    description: A request to create a refund.
+    payment_id: string
+    amount: number
+    reason: string
+
+  RefundCreated:
+    description: A successfully created refund.
+    refund_id: string
+    payment_id: string
+    amount: number
+    reason: string
+    status: string
+
+  RefundError:
+    description: A rejected refund request.
+    error: string
+    message: string
+
+routes:
+  create_refund:
+    api: refund_api
+    description: Create a refund. Amounts above $500 require a non-empty reason.
+    method: POST
+    path: /api/refunds
+    headers:
+      Content-Type: application/json
+    request:
+      body: RefundRequest
+    responses:
+      201: RefundCreated
+      400: RefundError
+
+flows:
+  refund_regression_suite:
+    description: Verify the refund business rule with positive and negative cases.
+    steps:
+      - step: small_without_reason
+        action: create_refund
+        inputs:
+          body:
+            payment_id: pay_1001
+            amount: 100
+
+      - step: large_with_reason
+        action: create_refund
+        inputs:
+          body:
+            payment_id: pay_1002
+            amount: 750
+            reason: Duplicate charge
+
+      - step: large_without_reason
+        action: create_refund
+        inputs:
+          body:
+            payment_id: pay_1003
+            amount: 750
+
+tests:
+  refund_regression_suite:
+    description: Detect removal of the reason requirement for refunds above $500.
+    execute: refund_regression_suite
+    expect:
+      small_without_reason: 201
+      large_with_reason: 201
+      large_without_reason: 400
+    verify:
+      - "small_without_reason.response.body.status == 'pending'"
+      - "large_with_reason.response.body.status == 'pending'"
+      - "large_without_reason.response.body.error == 'REFUND_REASON_REQUIRED'"
