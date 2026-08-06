@@ -1,0 +1,115 @@
+api:
+  name: "Supabase Todos API"
+  version: "v1"
+  base_url: "https://tvlphasahvaffdzzgugf.supabase.co"
+  description: "PostgREST todos CRUD — models for run context and AI summary."
+
+auth:
+  type: bearer
+  in: header
+  secret_arn: {add your supabase auth arn here}
+models:
+  Todo:
+    description: "Single todo row."
+    id: uuid
+    title: string
+    user_id: uuid
+    created_at: datetime
+
+  TodoCreate:
+    description: "Payload for creating a todo."
+    required:
+      - title
+      - user_id
+    title: string
+    user_id: uuid
+
+  TodoUpdate:
+    description: "Payload for updating a todo."
+    title: string
+
+  TodoList:
+    description: "Array of todos returned by PostgREST."
+    type: array
+    items: Todo
+
+  Empty:
+    description: "No response body (204 delete)."
+
+routes:
+  create_todo:
+    description: "Create a todo for authenticated user."
+    method: POST
+    path: /rest/v1/todos
+    headers:
+      apikey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      Content-Type: "application/json"
+      Prefer: "return=representation"
+    request:
+      body: TodoCreate
+    response:
+      201: TodoList
+
+  list_todos:
+    description: "List todos for authenticated user."
+    method: GET
+    path: /rest/v1/todos
+    # ... select query param
+    response:
+      200: TodoList
+
+  get_todo:
+    method: GET
+    path: /rest/v1/todos
+    # ... id + select filters
+    response:
+      200: TodoList
+
+  update_todo:
+    method: PATCH
+    path: /rest/v1/todos
+    # ... id filter + TodoUpdate body
+    response:
+      200: TodoList
+
+flows:
+  todos_crud:
+    description: "Create → list → get → update → delete with chained todo ID."
+    steps:
+      - step: create
+        action: create_todo
+        inputs:
+          body:
+            title: "E2E Todo"
+            description: "Created from contract E2E flow"
+            user_id: "f657b9c4-6659-45e3-9f79-3a6af6d94620"
+      - step: list
+        action: list_todos
+        inputs:
+          select: "*"
+      - step: get
+        action: get_todo
+        inputs:
+          id: "eq.{create.response.body.0.id}"
+          select: "*"
+      - step: update
+        action: update_todo
+        inputs:
+          id: "eq.{create.response.body.0.id}"
+          body:
+            title: "Updated E2E"
+            description: "Updated from contract E2E flow"
+
+tests:
+  todos_crud:
+    description: "Full todos CRUD with models exported to run context."
+    execute: todos_crud
+    expect:
+      create: 201
+      list: 200
+      get: 200
+      update: 200
+    verify:
+      - "create.response.body.0.id != null"
+      - "create.response.body.0.user_id == 'f657b9c4-6659-45e3-9f79-3a6af6d94620'"
+      - "update.response.body.0.title == 'Updated E2E'"
