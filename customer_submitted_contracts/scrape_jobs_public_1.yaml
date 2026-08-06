@@ -1,0 +1,156 @@
+contract:
+  format: apilabs.ai
+  version: "1.0"
+  type: api-contract
+
+apis:
+  scrape_jobs:
+    name: "Scrape Jobs API"
+    version: v1
+    base_url: "https://<your-tunnel>.ngrok-free.app" # HERE
+    description: "Submit a scrape job, poll it to completion, collect rows."
+    auth:
+      type: bearer
+      in: header
+      secret_arn: "arn:apilabs:secret:<your-vault-secret-id>" # Here
+    headers:
+      # ngrok's free tier serves an HTML interstitial to browser-like clients.
+      ngrok-skip-browser-warning: "true"
+
+models:
+  JobCreate:
+    description: "Request body for creating a scrape job"
+    source_url: string
+    max_pages: integer
+  Job:
+    description: "A scrape job and its current progress"
+    job_id: string
+    source_url: string
+    max_pages: integer
+    status: string
+    pages_done: integer
+    rows_found: integer
+  Rows:
+    description: "Scraped rows, available once the job has completed"
+    page: integer
+    url: string
+    title: string
+  Error:
+    description: "Error envelope"
+    code: string
+    message: string
+    correlation_id: string
+
+routes:
+  create_job:
+    api: scrape_jobs
+    description: "Create a scrape job. Idempotent on Idempotency-Key."
+    method: POST
+    path: /v1/jobs
+    headers:
+      Content-Type: application/json
+      Idempotency-Key: "contract-run-green"
+      ngrok-skip-browser-warning: "true"
+    request:
+      body: JobCreate
+    responses:
+      201: Job
+      401: Error
+      422: Error
+
+  list_jobs:
+    api: scrape_jobs
+    description: "List all jobs, newest first"
+    method: GET
+    headers:
+      ngrok-skip-browser-warning: "true"
+    path: /v1/jobs
+    responses:
+      200: Job
+      401: Error
+
+  get_job:
+    api: scrape_jobs
+    description: "Fetch one job and its progress"
+    method: GET
+    headers:
+      ngrok-skip-browser-warning: "true"
+    path: /v1/jobs/{job_id}
+    params:
+      job_id: { type: string, in: path, required: true }
+    responses:
+      200: Job
+      404: Error
+
+  get_rows:
+    api: scrape_jobs
+    description: "Scraped rows — 409 until the job reaches completed"
+    method: GET
+    headers:
+      ngrok-skip-browser-warning: "true"
+    path: /v1/jobs/{job_id}/rows
+    params:
+      job_id: { type: string, in: path, required: true }
+    responses:
+      200: Rows
+      409: Error
+      404: Error
+
+  delete_job:
+    api: scrape_jobs
+    description: "Delete a job and its rows"
+    method: DELETE
+    headers:
+      ngrok-skip-browser-warning: "true"
+    path: /v1/jobs/{job_id}
+    params:
+      job_id: { type: string, in: path, required: true }
+    responses:
+      204: Error
+      404: Error
+
+flows:
+  scrape_lifecycle:
+    description: "create -> list -> get -> rows -> delete, chaining job_id"
+    steps:
+      - step: create
+        action: create_job
+        inputs:
+          body:
+            source_url: "https://books.toscrape.com/"
+            max_pages: 4
+
+      - step: list
+        action: list_jobs
+
+      - step: check
+        action: get_job
+        inputs:
+          job_id: "{create.response.body.job_id}"
+
+      # Named for what it actually asserts: the job is still running.
+      - step: rows_not_ready
+        action: get_rows
+        inputs:
+          job_id: "{create.response.body.job_id}"
+
+      - step: cleanup
+        action: delete_job
+        inputs:
+          job_id: "{create.response.body.job_id}"
+
+tests:
+  scrape_lifecycle:
+    description: "Full job lifecycle with chained job_id"
+    execute: scrape_lifecycle
+    expect:
+      create: 201
+      list: 200
+      check: 200
+      rows_not_ready: 409
+      cleanup: 204
+    verify:
+      - "create.response.body.job_id != null"
+      - "create.response.body.status == 'queued'"
+      - "check.response.body.max_pages == 4"
+      - "rows_not_ready.response.body.code == 'conflict'"
