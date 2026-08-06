@@ -61,8 +61,10 @@ Every tool call runs through the same guardrails, approvals, and evidence captur
 
 ### Configure SuperContracts MCP in Cursor
 
-1. Open **Cursor Settings → Features → MCP** and click **Add MCP Server**, or add a project-level `.cursor/mcp.json` file.
-2. Download the SuperContracts MCP server from MCP Downloads, or paste the config below after starting the local MCP server:
+1. Log into https://apilabs.ai and from 'Auth Vault' create a MCP Token. Auth Vault is a central place to create/securely store OAuth, API/MCP Tokens and copy the ARN to inject to your contracts.
+2. Use Cloudflare, Ngrok as needed to get local access or to get a public URL.
+3. Open **Cursor Settings → Features → MCP** and click **Add MCP Server**, or add a project-level `.cursor/mcp.json` file.
+4. Download the SuperContracts MCP server from 'MCP Downloads', or paste the config below after starting the local MCP server:
 
 ```json
 {
@@ -74,7 +76,7 @@ Every tool call runs through the same guardrails, approvals, and evidence captur
 }
 ```
 
-3. Start the SuperContracts MCP server, get MCP token from https://apilabs.ai 'Auth Vault'. A green indicator in Cursor confirms the tools are discovered.
+5. Start the SuperContracts MCP server. A green indicator in Cursor confirms the tools are discovered.
 
 ### Published MCP Tools
 
