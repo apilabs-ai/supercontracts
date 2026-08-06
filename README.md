@@ -313,4 +313,4 @@ Apache-2.0
 ## Support
 
 Join Discord Channel
-https://discord.com/invite/rVC2YMQH4
+https://discord.gg/Euh3nxFFeq
