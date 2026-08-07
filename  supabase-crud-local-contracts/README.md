@@ -44,11 +44,47 @@ Later steps pull the created todo’s `id` from the create response.
 
 ---
 
+## Secret ARN
+
+`secret_arn` is a reference to a credential stored in **Auth Vault** on [apilabs.ai](https://apilabs.ai) — not the token itself.
+
+Example:
+
+```yaml
+auth:
+  type: bearer
+  in: header
+  secret_arn: "arn:apilabs:secret:<your-vault-secret-id>"
+```
+
+At run time, SuperContracts resolves the ARN and injects the bearer token. The real JWT stays in the vault, so you can share the YAML without leaking secrets.
+
+---
+
+## API authentication
+
+Two ways to authenticate API calls:
+
+### 1. Auth Vault + Secret ARN (recommended)
+
+1. Log in to [apilabs.ai](https://apilabs.ai)
+2. Open **Auth Vault** and store your Supabase user JWT (or API token)
+3. Copy the generated **Secret ARN**
+4. Paste it into `auth.secret_arn` in the contract
+
+### 2. Add tokens directly
+
+Put the bearer token (and/or `apikey`) straight into the contract YAML headers / auth fields.
+
+Works for quick local runs, but avoid committing real tokens to git.
+
+---
+
 ## Setup
 
 1. Set `api.base_url` to your Supabase project URL
-2. Point `auth.secret_arn` at a user JWT in Auth Vault
-3. Set route `apikey` headers to your Supabase key
+2. Configure auth (Secret ARN recommended, or tokens directly — see above)
+3. Set route `apikey` headers to your Supabase anon/service key
 4. Use a real `user_id` in the create step (and matching `verify` check)
 
 ---

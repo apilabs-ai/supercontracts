@@ -1,8 +1,8 @@
 api:
-  name: "Milkat Bazaar API"
+  name: "Seller Property API"
   version: "v1"
   base_url: "https://dismantle-splendid-rash.ngrok-free.dev"
-  description: "Local Milkat Bazaar backend via ngrok — seller property create/list/publish."
+  description: "Local seller property backend via ngrok — create, list, get, and publish."
 
 auth:
   type: bearer
@@ -198,7 +198,7 @@ flows:
 
 tests:
   milkat_property_demo:
-    description: "Create and publish a Milkat property via ngrok local backend"
+    description: "Create and publish a seller property via ngrok local backend"
     execute: milkat_property_demo
     expect:
       me: 200
