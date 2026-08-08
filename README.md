@@ -28,14 +28,12 @@ API operations are fragmented.
 * **Jira<sup>TM</sup>, Slack<sup>TM</sup>, and email** handle approvals.
 * **Logs** capture audits.
 
-The result is drift, duplicated work, weak governance, and unclear ownership.
-
-That was inefficient for developers.
+The result is drift, duplicated work, weak governance, and unclear ownership. That was inefficient for developers.
 With AI agents and MCP tools executing real actions, it becomes a security risk.
 
 Agents can touch money, data, code, infrastructure, and customer operations. Without guardrails, they can trigger unauthorized access, destructive changes, privilege misuse, prompt-injection exploits, or unapproved production actions.
 
-**Open Contract Spec<sup>TM</sup> brings docs, tests, workflows, approvals, guardrails, and audit trails into one executable contract.**
+**Supercontracts from apilabs.ai brings docs, tests, workflows, approvals, guardrails, and audit trails into one executable contract.**
 
 
 ---
