@@ -1,0 +1,37 @@
+version: "1"
+
+mcp_endpoint: https://mcp.stripe.com
+auth:
+  type: bearer
+  in: header
+  secret: {add_stripe_secret_here}
+
+intents:
+  list_payments:
+    tool: stripe_api_read
+    args:
+      stripe_api_operation_id: GetPaymentIntents
+
+  create_refund:
+    tool: stripe_api_write
+    args:
+      stripe_api_operation_id: PostRefunds
+
+guardrails:
+  - id: allow_list
+    when: action == "list_payments"
+    decision: ALLOW
+    reason: Read-only.
+
+  - id: allow_refund_under_limit
+    when: action == "create_refund" && amount <= 500
+    decision: ALLOW
+    reason: Refunds up to $500 are allowed.
+
+  - id: block_refund_over_limit
+    when: action == "create_refund" && amount > 500
+    decision: BLOCK
+    reason: Refunds above $500 are blocked.
+
+default:
+  decision: BLOCK
