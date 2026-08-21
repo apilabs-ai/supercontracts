@@ -1,0 +1,26 @@
+version: "1"
+
+mcp_endpoint: https://mcp.supabase.com/mcp?project_ref=mwpciuxwhmvdkygaezxi
+auth:
+  type: bearer
+  in: header
+  secret_arn: {add_supabase_secret_here} # arn:aws:secretsmanager:us-east-1:123456789012:secret:supabase-secret-123456789012
+intents:
+  read_customer_data:
+    tool: supabase_api_read
+    args:
+      supabase_api_operation_id: GetCustomers
+
+guardrails:
+  - id: block_customer_pii
+    when: action == "read_customer_data" && (column == "credit_card" || column == "ssn")
+    decision: BLOCK
+    reason: Customer PII columns such as credit card and SSN are not allowed to be read.
+
+  - id: allow_safe_customer_data
+    when: action == "read_customer_data"
+    decision: ALLOW
+    reason: Non-PII customer columns are allowed to be read.
+
+default:
+  decision: BLOCK

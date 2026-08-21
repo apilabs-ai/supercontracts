@@ -1,0 +1,44 @@
+version: "1"
+
+domain: github.com
+mcp_endpoint: https://api.githubcopilot.com/mcp/
+
+auth:
+  type: bearer
+  in: header
+  secret_arn: {add_github_secret_here} # arn:aws:secretsmanager:us-east-1:123456789012:secret:github-secret-123456789012
+
+intents:
+  git_push:
+    tool: github_api_write
+    args:
+      github_api_operation_id: GitPush
+
+  create_pull_request:
+    tool: github_api_write
+    args:
+      github_api_operation_id: CreatePullRequest
+
+  modify_file:
+    tool: github_api_write
+    args:
+      github_api_operation_id: ModifyFile
+
+guardrails:
+  - id: allow-feature-branch
+    when: action == "git.push" && branch != "main" && branch != "master" && force != true
+    decision: ALLOW
+    reason: Pushes to feature branches are allowed.
+
+  - id: allow-pull-request
+    when: action == "github.create_pull_request"
+    decision: ALLOW
+    reason: Pull requests are allowed for code changes.
+
+  - id: allow-code-change
+    when: action == "github.modify_file" && branch != "main" && branch != "master"
+    decision: ALLOW
+    reason: Code changes are allowed on feature branches.
+
+default:
+  decision: BLOCK
