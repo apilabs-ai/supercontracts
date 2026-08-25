@@ -7,7 +7,7 @@
 <h1 align="center">SuperContracts</h1>
 
 <p align="center">
-  Not Another Agent Framework — The Contract and Guardrail Layer for APIs, MCPs, Workflows, and AI Agents
+  <strong>Not Another Agent Framework — The Contract and Guardrail Layer for APIs, MCPs, Workflows, and AI Agents</strong>
 </p>
 
 SuperContracts from apilabs.ai is an executable contract specification for APIs, MCP servers, multi-step workflows, and AI agents. It defines how tools are invoked, governed with deterministic guardrails, tested, and observed—working alongside agent frameworks like LangChain and AI IDEs like Cursor and Claude Code rather than replacing them.
