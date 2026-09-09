@@ -1,22 +1,15 @@
-# =============================================================================
-# SUPERCONTRACTS™ ENTERPRISE — DRAFT SPECIFICATION
-# Copyright © API Labs. All rights reserved.
+# SUPERCONTRACT DSL SPEC — DRAFT SPECIFICATION
 #
-# STATUS: Draft / evolving specification. Not a finalized 1.0 standard.
-# PURPOSE: Use this enterprise spec for production systems, regulated workloads,
-#          least-privilege AI agents, MCP governance, human approvals, durable
-#          runtime evidence, observability, and IDE-based execution.
-# SOURCE OF TRUTH: This file defines the enterprise contract structure. Simplified
-#                  examples in documentation should not override this specification.
-# SECURITY: Never embed raw credentials. Keep enforcement fail-closed, deny
-#           unlisted tools and operations, and require approval for production writes.
+# STATUS: Draft / evolving. Not a finalized 1.0 standard.
+# PURPOSE: Enterprise DSL for APIs, MCPs, AI agents, approvals, guardrails,
+#          runtime evidence, observability, and secure IDE execution.
+# SOURCE OF TRUTH: This file defines the canonical enterprise contract structure.
+# SECURITY: Default deny. Fail closed. Never embed raw credentials.
+#           Deny unlisted actions and require approval for production writes.
+#
+# CONTROL FLOW:
+# Intent -> Identity -> Policy -> Approval -> Execution -> Evidence
 # =============================================================================
-
-# -----------------------------------------------------------------------------
-# CONTRACT METADATA
-# WHEN TO USE: Always. Establishes identity, ownership, lifecycle status, version,
-# and intent. Treat changes as governed source-code changes.
-# -----------------------------------------------------------------------------
 supercontract:
   spec_version: "1.0"
   id: order-processing
