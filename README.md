@@ -12,6 +12,8 @@
 
 SuperContracts from apilabs.ai is an executable contract specification for APIs, MCP servers, multi-step workflows, and AI agents. It defines how tools are invoked, governed with deterministic guardrails, tested, and observed—working alongside agent frameworks like LangChain and AI IDEs like Cursor and Claude Code rather than replacing them.
 
+[![Supercontracts Spec](https://img.shields.io/badge/Supercontracts%20Spec-1f6feb?style=for-the-badge)](https://github.com/apilabs-ai/supercontracts/blob/main/apilabs-supercontracts-spec.yml)
+
 ---
 
 ## Why
