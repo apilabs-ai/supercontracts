@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="apilabs_ai_supercontracts.png"
+  <img src="images/apilabs_ai_supercontracts.png"
        alt="apilabs.ai SuperContracts"
        width="400">
 </p>
