@@ -47,6 +47,11 @@ Agents can touch money, data, code, infrastructure, and customer operations. Wit
 * AI-agent permissions
 * Runtime evidence
 
+<p align="center">
+  <img src="images/apilabs_ai_agentic_security_platform.jpg"
+       alt="apilabs.ai Agentic Security Platform">
+</p>
+
 ---
 
 # SuperContracts Core Capabilities & Code Recipes
