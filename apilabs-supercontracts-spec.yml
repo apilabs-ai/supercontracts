@@ -1,577 +1,693 @@
-# SUPERCONTRACT DSL SPEC — DRAFT SPECIFICATION
+# =============================================================================
+# SUPERCONTRACT DSL SPEC — SPECIFICATION
+# Version: 0.10  ·  Status: Draft / evolving. Not a finalized 1.0 standard.
 #
-# STATUS: Draft / evolving. Not a finalized 1.0 standard.
-# PURPOSE: Enterprise DSL for APIs, MCPs, AI agents, approvals, guardrails,
-#          runtime evidence, observability, and secure IDE execution.
-# SOURCE OF TRUTH: This file defines the canonical enterprise contract structure.
+# PURPOSE: One specification for API workflows, MCP guardrails, AI-agent
+#          policy, approvals, runtime evidence and IDE execution.
+# SOURCE OF TRUTH: This file is canonical for contract structure.
 # SECURITY: Default deny. Fail closed. Never embed raw credentials.
 #           Deny unlisted actions and require approval for production writes.
 #
 # CONTROL FLOW:
-# Intent -> Identity -> Policy -> Approval -> Execution -> Evidence
+#   Intent -> Identity -> Policy -> Approval -> Execution -> Evidence
+#
+#   Where each stage stands today (see tiers below):
+#     Intent      CORE      — routes, flows, intents, tools
+#     Identity    PARTIAL   — auth and secret resolution are CORE; agent
+#                             identity and least-privilege principals are
+#                             PROPOSED (§7)
+#     Policy      CORE      — guardrails for MCP tools and skills (§§4-5)
+#     Approval    PROPOSED  — reachable imperatively via the MCP surface (§9),
+#                             not yet declarable in a contract (§7)
+#     Execution   CORE      — flows, chaining, tests (§3)
+#     Evidence    EXTENDED  — run artifacts produced by the hosted runtime (§8)
+#
+#   Stating this honestly is the point of the tier system: the control flow is
+#   the right model, and two of its six stages are not yet contract-declarable.
+#
+# Licensed under Apache-2.0, inheriting this repository's LICENSE.
+#
+# This file supersedes the former minimal and enterprise DSL specs. Its previous
+# contents described a format built on `schemas`, `operations` and `workflows`
+# that no contract used and the engine does not execute.
+#
+# NORMATIVE COMPANION:
+#   supercontracts-expression-grammar.md — the reference, predicate, and
+#   guardrail condition languages. Required reading for implementers.
+#
+# -----------------------------------------------------------------------------
+# HOW TO READ THIS DOCUMENT
+#
+# Every block carries a conformance tier. The tier is normative and answers the
+# only question a contract author actually has: will this run?
+#
+#   [CORE]      Executed by the engine today. Verified against the runnable
+#               contracts in this repository. A conforming implementation MUST
+#               support every CORE key.
+#
+#   [EXTENDED]  Real capability, delivered by the hosted apilabs runtime or the
+#               MCP server rather than by contract YAML alone. Observable, but
+#               not fully specified here. SHOULD be supported.
+#
+#   [PROPOSED]  Design intent. NOT executed by any known implementation and MUST
+#               NOT be relied upon. Retained so the roadmap is legible and so no
+#               reader mistakes it for shipping functionality. An engine
+#               encountering a PROPOSED block SHOULD warn rather than fail.
+#
+# TIER PROMOTION RULE (normative process, not syntax):
+#   A block moves from PROPOSED to CORE only when a runnable example contract
+#   lands in this repository alongside it. Nothing else promotes a block. This
+#   rule exists because the documents this one replaces drifted from the engine
+#   for seven weeks without any mechanism to notice.
+#
+# -----------------------------------------------------------------------------
+# COMPATIBILITY POLICY
+#
+# This specification describes a format with contracts already in the field. It
+# therefore names a canonical form for each construct AND accepts the variants
+# already in use. Accepted variants are marked DEPRECATED: an implementation
+# MUST continue to accept them, SHOULD warn, and MUST NOT reject a document for
+# using one. Removal requires a major version.
+#
+# Where this document is stricter than an existing example contract, the example
+# is a conformance bug to be fixed in that file — not a reason to weaken the
+# rule. Such cases are called out inline.
 # =============================================================================
-supercontract:
-  spec_version: "1.0"
+
+
+# =============================================================================
+# 1. DOCUMENT ENVELOPE                                                  [CORE]
+# =============================================================================
+# Every contract MUST carry an envelope identifying the format and the contract
+# type. `type` is the single discriminator; an implementation dispatches on it.
+
+contract:
+  format: apilabs.ai        # constant
+  version: "1.0"            # SPEC version targeted, not the author's version
+  type: api-contract        # see §1.1
+
+# ---------------------------------------------------------------------------
+# 1.1 Contract types
+# ---------------------------------------------------------------------------
+#   api-contract      HTTP routes, chained flows, tests            §3  [CORE]
+#   guarded-service   MCP/REST policy over an upstream service     §4  [CORE]
+#   skill             Skill Register intent policy                 §5  [CORE]
+#   apptalk-contract  Form-provider → CRM field sync               §6  [EXTENDED]
+#
+# RESERVED — recognized type names, schemas not published here:
+#   hook-policy       Shell/CLI command guardrails
+#   shell-detection   Post-execution shell findings
+# These types exist and execute, but their contracts live outside this
+# repository. An implementation MUST NOT reuse these names for anything else.
+# Whether to publish their schemas here is a decision for the maintainers.
+
+# ---------------------------------------------------------------------------
+# 1.2 Accepted envelope variants — DEPRECATED
+# ---------------------------------------------------------------------------
+# All three parse today and MUST continue to be accepted:
+#
+#   (a) nested   contract: {format, version, type}          CANONICAL
+#   (b) bare     format: / version: / type: at document root
+#   (c) absent   document begins at `api:` or `apis:`
+#                → treated as type: api-contract
+#
+# The policy types additionally spell the discriminator `kind:` rather than
+# `type:`. `kind:` is DEPRECATED as an alias of `type:`; carrying two words for
+# one concept across several dialects is what produced the divergence this
+# document resolves.
+#
+# Implementations SHOULD warn on (b), (c) and `kind:`. None may be rejected.
+
+# ---------------------------------------------------------------------------
+# 1.3 meta — authorship and lifecycle                               [PROPOSED]
+# ---------------------------------------------------------------------------
+# No known consumer. Defined so bookkeeping has one agreed home rather than
+# being reinvented per contract.
+meta:
   id: order-processing
-  version: "2.1.0"
-  kind: service
-  status: active
+  version: "2.1.0"          # the contract author's own semver
   owner: fulfillment-platform
-  description: >-
-    Executable contract for creating and retrieving customer orders through APIs,
-    workflows, MCP tools, and approved AI agents.
-  tags: [orders, fulfillment, ecommerce]
+  description: Create, retrieve, test, and govern customer orders.
+  tags: [orders, fulfillment]
+  status: active            # active | draft | deprecated
 
-# -----------------------------------------------------------------------------
-# SERVICE DEFAULTS
-# WHEN TO USE: Define protocol and defaults shared by all operations, including
-# timeout, content type, authentication, and default environment.
-# -----------------------------------------------------------------------------
-service:
-  name: Order Processing Service
-  protocol: https
-  default_environment: development
-  defaults:
-    timeout: 30s
-    content_type: application/json
-    auth: order_bearer
 
-# -----------------------------------------------------------------------------
-# ENVIRONMENTS AND SECRETS
-# WHEN TO USE: Always for multi-environment or production execution. Separate
-# endpoints and secret references by environment; never store plaintext credentials.
-# -----------------------------------------------------------------------------
-environments:
-  production:
+# =============================================================================
+# 2. COMMON VOCABULARY
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# 2.1 Secrets                                                           [CORE]
+# ---------------------------------------------------------------------------
+# Credentials are referenced, never embedded. `secret_arn` names an apilabs
+# Auth Vault entry; the engine resolves it at run time and MUST NOT write the
+# resolved value into contract YAML or run artifacts.
+#
+# A contract MUST NOT contain a literal credential. This is normative and it is
+# currently violated in practice — implementations SHOULD scan for and warn on
+# values shaped like credentials (JWTs, webhook URLs, provider key prefixes).
+# A placeholder MUST be visibly a placeholder: `<your-supabase-anon-key>`, not a
+# truncated real value that reads as filled in.
+
+# ---------------------------------------------------------------------------
+# 2.2 Decision values                                                   [CORE]
+# ---------------------------------------------------------------------------
+# Used by §4, §5 and the reserved policy types.
+#
+#   ALLOW              permit the call
+#   BLOCK              deny the call
+#   APPROVAL_REQUIRED  suspend pending human approval
+#
+# Decision values MUST be compared case-insensitively — both casings are in
+# active use. An unrecognized decision value MUST be treated as BLOCK.
+# Uppercase is canonical in documentation.
+#
+# The rationale is asymmetric risk: a mishandled BLOCK fails open. Every
+# ambiguity in this vocabulary therefore resolves toward denial.
+# See supercontracts-expression-grammar.md §3.3.
+
+
+# =============================================================================
+# 3. TYPE: api-contract
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# 3.1 apis — upstream services                                          [CORE]
+# ---------------------------------------------------------------------------
+# CANONICAL: `apis:`, a map of named services. Routes bind to one via `api:`.
+# DEPRECATED: `api:`, a single inline service, retained as sugar for the
+# single-service case and desugaring to `apis: {default: {...}}`. Widely used;
+# no plans to remove.
+apis:
+  orders_api:
+    name: Order Processing Service
+    version: v1
     base_url: https://api.fulfillment.io/v2
-    classification: production
-    writes: approval_required
-  staging:
-    base_url: https://staging-api.fulfillment.io/v2
-    classification: non_production
-    writes: allowed
-  development:
-    base_url: http://localhost:8080/v2
-    classification: non_production
-    writes: allowed
-    secure_tunnel: true
+    description: Customer order creation and retrieval.
 
-security:
-  auth_schemes:
-    order_bearer:
-      type: http
-      scheme: bearer
-      token:
-        secret: order_token
-        header: Authorization
-        prefix: Bearer
+    # Per-API auth overrides the document-level `auth:` for this API's routes.
+    auth:
+      type: bearer
+      in: header
+      secret_arn: arn:apilabs:secret:<vault-secret-id>
 
-  secrets:
-    order_token:
-      provider: environment_aware
-      references:
-        production: aws-sm://orders/prod/access-token
-        staging: aws-sm://orders/staging/access-token
-        development: env://ORDER_TOKEN
-      never_log: true
+    # Applied to every route on this API. Route-level headers win on collision.
+    headers:
+      ngrok-skip-browser-warning: "true"
 
-# -----------------------------------------------------------------------------
-# DOMAIN SCHEMAS
-# WHEN TO USE: Define reusable request, response, identifier, and error contracts.
-# These schemas drive validation, testing, tool safety, and generated documentation.
-# -----------------------------------------------------------------------------
-schemas:
-  OrderId:
-    type: string
-    pattern: '^ord_[A-Za-z0-9]{12}$'
-    description: Unique system identifier for an order.
+# ---------------------------------------------------------------------------
+# 3.2 auth — document-level default                                     [CORE]
+# ---------------------------------------------------------------------------
+# Used by any API that declares no `auth:` of its own. See §2.1 for secrets.
+auth:
+  type: bearer              # bearer | basic | api_key | oauth2
+  in: header                # header | query
+  secret_arn: arn:apilabs:secret:<vault-secret-id>
 
-  Sku:
-    type: string
-    pattern: '^[A-Z]{3}-[A-Z]{3}-[0-9]{3}$'
-    minLength: 11
-    maxLength: 11
-    description: Stock keeping unit in format AAA-BBB-123.
-
-  Quantity:
-    type: integer
-    minimum: 1
-    maximum: 10
-
-  OrderStatus:
-    type: string
-    enum: [pending, processing, shipped, cancelled]
-
+# ---------------------------------------------------------------------------
+# 3.3 models — payload shapes                                           [CORE]
+# ---------------------------------------------------------------------------
+# MODELS DESCRIBE; THEY DO NOT VALIDATE.
+#
+# This is the most misread part of the format, so it is stated plainly:
+#
+#   A model documents the shape a payload is EXPECTED to have. The engine
+#   verifies that model definitions and references are structurally valid —
+#   that a `body:` names a model that exists — and stops there. A request or
+#   response whose field types disagree with its model is NOT rejected. The
+#   call proceeds.
+#
+# Reading `quantity: integer` below, in a file called a contract, from a
+# product that sells deterministic guardrails, it is reasonable to assume a
+# non-integer quantity is refused. It is not. Strict payload validation belongs
+# to a schema/validation layer that does not exist yet (§8).
+#
+# Models feed run-context export and generated AI context.
+models:
   OrderCreate:
-    type: object
-    additionalProperties: false
-    required: [sku, quantity]
-    properties:
-      sku:
-        $ref: '#/schemas/Sku'
-      quantity:
-        $ref: '#/schemas/Quantity'
+    description: Payload for creating an order.
+    required:               # optional; documents intent, does not enforce
+      - sku
+      - quantity
+    sku: string
+    quantity: integer
 
   Order:
-    type: object
-    additionalProperties: false
-    required: [order_id, sku, quantity, status]
-    properties:
-      order_id:
-        $ref: '#/schemas/OrderId'
-      sku:
-        $ref: '#/schemas/Sku'
-      quantity:
-        $ref: '#/schemas/Quantity'
-      status:
-        $ref: '#/schemas/OrderStatus'
+    description: A created order.
+    order_id: string
+    sku: string
+    quantity: integer
+    status: string
 
-  Error:
-    type: object
-    additionalProperties: false
-    required: [code, message, correlation_id]
-    properties:
-      code:
-        type: string
-        example: OUT_OF_STOCK
-      message:
-        type: string
-        example: Requested quantity exceeds available warehouse stock.
-      correlation_id:
-        type: string
-      details:
-        type: object
-        additionalProperties: true
+  OrderList:
+    description: Array form. `type`/`items` is the one structural construct
+                 the flat field map supports.
+    type: array
+    items: Order
 
-# -----------------------------------------------------------------------------
-# API OPERATIONS
-# WHEN TO USE: Define every API action exposed to developers, agents, workflows,
-# or MCP tools. Assign effect and risk so policies can enforce appropriate controls.
-# -----------------------------------------------------------------------------
-operations:
+  Empty:
+    description: No response body (e.g. 204).
+
+# Scalar type names in use: string, integer, number, boolean, object, array,
+# uuid, datetime. Because models do not validate, these are documentation
+# labels; `uuid` and `datetime` are not known to behave differently from
+# `string`.
+
+# ---------------------------------------------------------------------------
+# 3.4 routes — callable HTTP actions                                    [CORE]
+# ---------------------------------------------------------------------------
+routes:
   place_order:
-    summary: Create a customer order.
+    api: orders_api         # required with `apis:`; omitted with `api:` sugar
+    description: Create a customer order.
     method: POST
     path: /orders
-    effect: write
-    risk: medium
-    auth: order_bearer
-    idempotency:
-      required: true
-      header: Idempotency-Key
-      ttl: 24h
+    headers:
+      Content-Type: application/json
     request:
-      body:
-        required: true
-        schema:
-          $ref: '#/schemas/OrderCreate'
-    responses:
-      '201':
-        description: Order accepted for fulfillment.
-        schema:
-          $ref: '#/schemas/Order'
-      '400':
-        description: Invalid request or inventory constraint.
-        schema:
-          $ref: '#/schemas/Error'
-      '401':
-        description: Invalid or expired bearer token.
-        schema:
-          $ref: '#/schemas/Error'
-      '409':
-        description: Duplicate idempotency key or conflicting order.
-        schema:
-          $ref: '#/schemas/Error'
-    emits: [order_created]
-    policy_refs:
-      - production_write_approval
-      - order_write_rate_limit
-      - redact_sensitive_data
-      - capture_execution_evidence
+      body: OrderCreate     # names a model; not an inline schema
+    responses:              # CANONICAL plural — see note below
+      "201": Order
+      "400": Error
 
   get_order:
-    summary: Retrieve an order by ID.
+    api: orders_api
     method: GET
     path: /orders/{order_id}
-    effect: read
-    risk: low
-    auth: order_bearer
-    parameters:
-      path:
-        order_id:
-          required: true
-          schema:
-            $ref: '#/schemas/OrderId'
+    params:
+      order_id:
+        type: string
+        in: path            # path | query
+        required: true
     responses:
-      '200':
-        description: Order found.
-        schema:
-          $ref: '#/schemas/Order'
-      '401':
-        description: Invalid or expired bearer token.
-        schema:
-          $ref: '#/schemas/Error'
-      '404':
-        description: Order not found.
-        schema:
-          $ref: '#/schemas/Error'
-    policy_refs:
-      - order_lookup_retry
-      - redact_sensitive_data
-      - capture_execution_evidence
+      "200": Order
+      "404": Error
 
-# -----------------------------------------------------------------------------
-# STATEFUL BUSINESS WORKFLOWS
-# WHEN TO USE: Model multi-step business outcomes that require sequencing, state,
-# assertions, retries, compensation, escalation, or post-action verification.
-# -----------------------------------------------------------------------------
-workflows:
+# RESPONSE KEY — CANONICAL `responses:`, DEPRECATED `response:`.
+#   Both forms ship and both execute. The plural is canonical because the value
+#   is a map of several statuses. Implementations MUST accept both.
+#   Known conformance bugs (singular form), to be fixed in those files:
+#     supercontracts/ supabase-crud-local-contracts/ ...yaml
+#     supercontracts/supercontracts-mcp-ngrok/ngrok_cursor_demo.yaml
+#
+# STATUS CODE KEYS — CANONICAL quoted strings ("201"). Bare integers (201:)
+#   parse as YAML integers and are used throughout the existing contracts.
+#   Implementations MUST normalize both to strings and MUST NOT error.
+
+# ---------------------------------------------------------------------------
+# 3.5 flows — ordered, chained execution                                [CORE]
+# ---------------------------------------------------------------------------
+flows:
   order_lifecycle:
-    description: Create an order, persist its identifier, and verify retrieval.
-    goal: Confirm that an accepted order is immediately available for tracking.
-    actor: customer
-    input_schema:
-      $ref: '#/schemas/OrderCreate'
-    rules:
-      - quantity must be between 1 and 10
-      - quantity must not exceed available inventory
-      - duplicate orders must be prevented through idempotency
-      - accepted orders must be retrievable after the configured retry policy
-    initial_state:
-      order_exists: false
-    success_state:
-      order_exists: true
-      order_status: pending
+    description: Create an order, then verify it can be retrieved.
     steps:
-      - id: submit_order
-        uses: operation.place_order
-        with:
-          body: $input
-          headers:
-            Idempotency-Key: $context.idempotency_key
-        capture:
-          order_id: $response.body.order_id
-          order_status: $response.body.status
-        assert:
-          status: 201
-          body.status: pending
+      - step: create        # step id; referenced by later steps and by tests
+        action: place_order # MUST name a key in `routes:`
+        inputs:
+          body:
+            sku: APP-YKM-992
+            quantity: 3
 
-      - id: retrieve_order
-        uses: operation.get_order
-        with:
-          path.order_id: $state.order_id
-        retry:
-          policy: order_lookup_retry
-        assert:
-          status: 200
-          body.order_id: $state.order_id
-          body.sku: $input.sku
-          body.quantity: $input.quantity
-          body.status: pending
-        on_success: complete
-        on_failure:
-          emit: order_lookup_failed
-          action: escalate
+      - step: fetch
+        action: get_order
+        inputs:
+          order_id: "{create.response.body.order_id}"
 
-      - id: complete
-        type: success
-        set_state:
-          order_exists: true
+# `inputs` keys map onto the route's declared `params` by name, plus the
+# reserved key `body`. A step with no inputs MAY omit the key.
+#
+# Step chaining syntax — `{step.response.body.path}` — is specified NORMATIVELY
+# in supercontracts-expression-grammar.md §1. Two rules there are load-bearing:
+#
+#   R1  A numeric path segment is an ARRAY INDEX or an OBJECT KEY depending on
+#       the runtime type of the container. `{create.response.body.0.id}`
+#       indexes an array; `{item.response.body.answers.2.answer}` reads key "2"
+#       of an object. An implementation that decides this lexically — treating
+#       all-digit segments as indices — will resolve the second case wrongly.
+#
+#   R10 An unresolvable reference MUST abort the step BEFORE the request is
+#       sent. It MUST NOT degrade to an empty string: `id: "eq.{...}"` reduced
+#       to `id: "eq."` is a PostgREST filter matching every row, which on a
+#       DELETE route is data loss rather than a failed test.
+#
+#   R2/R3  BRACES SELECT STRING INTERPOLATION. A bare path as the whole value
+#       preserves the referenced value's JSON type; the same path wrapped in
+#       braces produces a string.
+#
+#         price: create.response.body.price      ->  45000    (number)
+#         price: "{create.response.body.price}"  ->  "45000"  (string)
+#
+#       Use braces when building a string — a filter expression, a URL
+#       fragment, a message. Use a bare reference when the field needs a real
+#       number, boolean, array or object. Reaching for braces by habit on a
+#       numeric field silently sends a string.
 
-# -----------------------------------------------------------------------------
-# ENFORCEMENT POLICIES
-# WHEN TO USE: Centralize reusable approvals, retries, limits, redaction, and
-# evidence rules. Prefer policy references over duplicating logic in operations.
-# -----------------------------------------------------------------------------
-policies:
-  defaults:
-    enforcement: block
-    deny_unlisted_operations: true
-    fail_closed: true
+# ---------------------------------------------------------------------------
+# 3.6 run — default flow                                                [CORE]
+# ---------------------------------------------------------------------------
+# Optional. Names the flow executed when the caller specifies none.
+run: order_lifecycle
 
-  approvals:
-    production_write_approval:
-      description: Require human approval for production write operations.
-      match:
-        environments: [production]
-        effects: [write, destructive]
-      approval:
-        type: human
-        approver_groups: [fulfillment-operations]
-        timeout: 15m
-        on_timeout: reject
-      evidence:
-        capture: [requester, approver, decision, reason, timestamp]
-
-  retries:
-    order_lookup_retry:
-      description: Retry temporary order lookup failures caused by eventual consistency.
-      match:
-        operation: get_order
-        response_status: 404
-      max_attempts: 3
-      initial_delay: 1s
-      backoff: exponential
-      max_delay: 5s
-
-  rate_limits:
-    order_write_rate_limit:
-      match:
-        operation: place_order
-      limit: 10
-      window: 1m
-      key: $actor.id
-      on_exceed: block
-
-  redaction:
-    redact_sensitive_data:
-      request_paths:
-        - $request.headers.authorization
-        - $request.body.pii
-      response_paths:
-        - $response.body.pii
-      replacement: '[REDACTED]'
-
-  evidence:
-    capture_execution_evidence:
-      capture:
-        - actor
-        - environment
-        - operation
-        - request_metadata
-        - response_metadata
-        - policy_decisions
-        - approvals
-        - state_changes
-        - assertions
-        - retries
-        - timestamps
-        - execution_trace
-      exclude:
-        - secrets
-        - authorization_tokens
-        - hidden_model_reasoning
-
-# -----------------------------------------------------------------------------
-# AI AGENT AND SLACK GUARDRAILS
-# WHEN TO USE: Required when autonomous agents or Slack™ bots can access real
-# systems. Explicitly constrain identities, tools, channels, actions, and environments.
-# -----------------------------------------------------------------------------
-agents:
-  order_assistant:
-    description: Support agent that can create and track customer orders.
-    identity:
-      type: service_agent
-      principal: order-assistant
-    permissions:
-      allow:
-        operations: [place_order, get_order]
-        workflows: [order_lifecycle]
-        environments: [development, staging, production]
-      deny:
-        - unlisted_operations
-        - direct_database_access
-        - secret_access
-    production_access:
-      writes: approval_required
-      reads: allowed
-    constraints:
-      max_quantity: 10
-      max_actions_per_request: 1
-      require_idempotency_for_writes: true
-      prevent_duplicate_orders: true
-      require_post_write_verification: true
-    escalation:
-      when:
-        - approval_rejected
-        - retry_exhausted
-        - policy_blocked
-        - order_created_but_not_retrievable
-      destination: fulfillment-operations
-    instructions:
-      - Do not execute operations outside the explicit allowlist.
-      - Do not expose credentials, tokens, or customer PII.
-      - Verify every successful order creation by retrieving the order.
-
-    interfaces:
-      slack:
-        enabled: true
-        bot_handle: '@OrderBot'
-        allowed_channels: ['#support-ops', '#order-triage']
-        require_thread_context: true
-        require_actor_identity: true
-        max_actions_per_message: 1
-
-# -----------------------------------------------------------------------------
-# TESTS
-# WHEN TO USE: Validate operations, workflows, and policies before release. Include
-# positive, negative, edge, security, and approval-path tests for production contracts.
-# -----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# 3.7 tests — assertions over a flow                                    [CORE]
+# ---------------------------------------------------------------------------
 tests:
-  fixtures:
-    valid_order:
-      sku: APP-YKM-992
-      quantity: 3
+  order_lifecycle:
+    description: Happy path with chained order ID.
+    execute: order_lifecycle
+    expect:                 # step id -> expected HTTP status
+      create: 201
+      fetch: 200
+    verify:                 # boolean predicates, as strings
+      - "create.response.body.order_id != null"
+      - "fetch.response.body.status == 'pending'"
 
-  suites:
-    order_lifecycle_smoke:
-      type: workflow
-      target: order_lifecycle
-      environment: staging
-      input: $fixtures.valid_order
-      expect:
-        status: success
-        steps:
-          submit_order: 201
-          retrieve_order: 200
-        final_state:
-          order_exists: true
-          order_status: pending
+# `verify` predicates are specified NORMATIVELY in
+# supercontracts-expression-grammar.md §2. The language is deliberately narrow:
+# one path, one operator (== or !=), one literal. No relational operators, no
+# boolean connectives, no parentheses, no path-to-path comparison.
+#
+# Response status is reachable only through `expect`, never through a
+# predicate. Response headers are not reachable at all. Both are known gaps.
 
-    reject_invalid_quantity:
-      type: operation
-      target: place_order
-      environment: staging
-      input:
-        sku: APP-YKM-992
-        quantity: 11
-      expect:
-        status: 400
 
-    require_production_approval:
-      type: policy
-      target: place_order
-      environment: production
-      expect:
-        decision: approval_required
+# =============================================================================
+# 4. TYPE: guarded-service                                              [CORE]
+# =============================================================================
+# A policy layer over an upstream service's tools. Describes permission, not
+# HTTP. Reference: supercontracts/mcp_guardrail_contracts/
+#
+#   contract: {format: apilabs.ai, version: "1.0", type: guarded-service}
+#
+#   service:
+#     name: github
+#     binding:
+#       repository: owner/repo        # binding shape is service-specific
+#     connector:
+#       type: rest                    # rest | mcp
+#       auth_secret: arn:apilabs:secret:<vault-secret-id>
+#
+#   mode: validate                    # validate | execute
+#
+#   tools:
+#     - name: create_branch           # the name guardrails and callers use
+#       upstream_tool: create_branch
+#     - name: modify_file
+#       upstream_tool: create_or_update_file
+#
+#   flow:                             # optional guarded sequence; see note
+#     - label: "Create feature branch"
+#       action: create_branch
+#       args: {branch: feature/demo, sha: main}
+#
+#   guardrails:
+#     - id: block_push_to_main
+#       when: action == "push" && branch == "main"
+#       decision: BLOCK
+#       reason: Direct pushes to main are not allowed.
+#
+#   default:
+#     decision: BLOCK
+#
+# mode — `validate` evaluates guardrails only; `execute` calls upstream on
+#   ALLOW. Implementations SHOULD default to `validate`: a contract that
+#   mutates a real system when the author expected a dry run is the more
+#   damaging error.
+#
+# flow — singular, a LIST, and unrelated to §3.5 `flows:` (a map). Each entry is
+#   evaluated then executed in order; the first BLOCK halts the sequence. The
+#   near-collision with `flows:` is a known wart; renaming it to `guarded_flow:`
+#   is proposed but not adopted, as it would break existing contracts.
+#
+# guardrails / default — see §4.1 and §2.2.
 
-  generation:
-    enabled: true
-    sources: [schemas, operations, workflows, policies]
-    categories: [edge, negative, schema, security, workflow]
-    require_human_review: true
+# ---------------------------------------------------------------------------
+# 4.1 Guardrail evaluation                                              [CORE]
+# ---------------------------------------------------------------------------
+# Guardrails MUST be evaluated in document order, first match wins. Evaluation
+# stops at the first rule whose condition is true; that rule's decision is the
+# outcome. If no rule matches, `default.decision` applies.
+#
+# `default` MUST be present and MUST be BLOCK for any contract bound to a
+# production system.
+#
+# Order-dependence is load-bearing. A policy that blocks PII columns before
+# allowing general reads is correct; the same two rules reversed silently
+# permit the read. An implementation MUST NOT reorder, parallelize or
+# deduplicate rules.
+#
+# A guardrail whose condition cannot be parsed MUST be treated as NON-matching
+# and MUST NOT abort evaluation in a way that skips `default`. A policy file
+# that fails to parse must still deny.
+#
+# Condition syntax: supercontracts-expression-grammar.md §3.
 
-# -----------------------------------------------------------------------------
-# EVENTS
-# WHEN TO USE: Publish business or operational outcomes to downstream systems.
-# Keep event payloads minimal, versionable, and free of secrets or unnecessary PII.
-# -----------------------------------------------------------------------------
-events:
-  order_created:
-    when:
-      operation: place_order
-      response_status: 201
-    publish:
-      topic: orders.created
-      payload:
-        order_id: $response.body.order_id
-        status: $response.body.status
-        correlation_id: $context.correlation_id
 
-  order_lookup_failed:
-    when:
-      workflow: order_lifecycle
-      step: retrieve_order
-      condition: retry_exhausted
-    publish:
-      topic: orders.lookup.failed
-      payload:
-        order_id: $state.order_id
-        correlation_id: $context.correlation_id
+# =============================================================================
+# 5. TYPE: skill  (Skill Register)                                      [CORE]
+# =============================================================================
+# Policy-only. Maps chat intents onto an upstream MCP server's tools and gates
+# them. Reference: skills/
+#
+#   contract: {format: apilabs.ai, version: "1.0", type: skill}
+#
+#   domain: github.com                # optional; discovery / auto-attach
+#   mcp_endpoint: https://api.githubcopilot.com/mcp/
+#   # api_endpoint: https://...       # REST alternative; mcp_endpoint wins
+#
+#   auth: {type: bearer, in: header, secret_arn: arn:apilabs:secret:<id>}
+#
+#   intents:
+#     create_pull_request:
+#       tool: github_api_write
+#       args:
+#         github_api_operation_id: CreatePullRequest
+#
+#   notifications:                    # [EXTENDED]
+#     on: [BLOCK]
+#     slack:
+#       webhook_url: <secret_arn preferred; see §2.1>
+#
+#   guardrails: ...                   # as §4.1
+#   default: {decision: BLOCK}
+#
+# DEPRECATED: existing skill files carry a bare `version: "1"` at root instead
+# of the §1 envelope. Accepted; SHOULD warn.
+#
+# ---------------------------------------------------------------------------
+# 5.1 The `action` identifier — normative                               [CORE]
+# ---------------------------------------------------------------------------
+# In a guardrail condition, `action` is the BARE INTENT KEY exactly as declared
+# under `intents:` (or `tools:` for §4). It carries no namespace and no dotted
+# form.
+#
+# Declaring intent `create_pull_request` and matching
+# `action == "github.create_pull_request"` matches nothing. Every rule falls
+# through to `default: BLOCK`, and a skill that appears to permit an action
+# silently forbids it.
+#
+# KNOWN CONFORMANCE BUG: skills/github/github-skill.yaml matches "git.push",
+# "github.create_pull_request" and "github.modify_file" against intents
+# declared as git_push, create_pull_request and modify_file. All three rules
+# are dead; the demo blocks everything it advertises. Fix in that file.
 
-# -----------------------------------------------------------------------------
-# RUNTIME EVIDENCE AND OBSERVABILITY
-# WHEN TO USE: Required for production, audits, incident review, and debugging.
-# Capture decisions and traces while excluding credentials and hidden model reasoning.
-# -----------------------------------------------------------------------------
+
+# =============================================================================
+# 6. TYPE: apptalk-contract                                         [EXTENDED]
+# =============================================================================
+# Form-provider → CRM field mapping. Sugar over api-contract: each integration
+# is expressible either as an `apptalk:` block or as an equivalent
+# apis/models/routes/flows contract.
+#
+#   contract: {format: apilabs.ai, version: "1.0", type: apptalk-contract}
+#
+#   apptalk:
+#     name: google_forms_zoho_leads_contract
+#     form_provider: google_forms     # google_forms | gravity_forms | jotform
+#     form_auth_arn: arn:apilabs:secret:<vault-secret-id>
+#     form_id: "<provider form id>"
+#     form_name: Lead Capture Form
+#     crm_provider: zoho              # zoho | hubspot | bigin
+#     crm_auth_arn: arn:apilabs:secret:<vault-secret-id>
+#     crm_module: Leads
+#     cleanup: true
+#     mappings:
+#       - sourceLabel: First Name     # label as shown on the form
+#         destFieldApiName: First_Name
+#
+#   flows:                            # BARE steps: the step id IS the operation
+#     e2e:
+#       steps:
+#         - step: validate
+#         - step: create_config
+#         - step: test_sync
+#
+#   tests: as §3.7 — `verify` only; `expect` is meaningless without HTTP status
+#
+# No apptalk contract currently ships in this repository, while the project
+# README's primary worked example is one. Either is defensible; the combination
+# is not.
+
+
+# =============================================================================
+# 7. GOVERNANCE EXTENSIONS                                          [PROPOSED]
+# =============================================================================
+# ┌───────────────────────────────────────────────────────────────────────────┐
+# │  NOTHING IN THIS SECTION IS IMPLEMENTED.                                  │
+# │                                                                           │
+# │  No contract in this repository uses any of it, and no known engine       │
+# │  executes it. A contract containing these blocks will run — with these    │
+# │  blocks ignored. Do not rely on them for any control you actually need.   │
+# │                                                                           │
+# │  It is retained, rather than deleted, because it is the project's stated  │
+# │  differentiator and represents real design work. Marking it honestly is   │
+# │  what allows the CORE tier above to be trusted.                           │
+# └───────────────────────────────────────────────────────────────────────────┘
+#
+# WHAT IS ACTUALLY AVAILABLE TODAY, so the gap is not overstated: approvals are
+# reachable IMPERATIVELY through the MCP surface (`request_approval`,
+# `get_approval_status`, `decide_approval`, §9), and APPROVAL_REQUIRED is a
+# working decision value in the reserved policy types. What is missing is the
+# declarative wiring below — not the underlying capability. That makes
+# approvals the shortest path from PROPOSED to CORE.
+#
+#   environments:
+#     production:
+#       base_url: https://api.fulfillment.io/v2
+#       classification: production
+#       writes: approval_required
+#     staging:
+#       base_url: https://staging-api.fulfillment.io/v2
+#       classification: non_production
+#       writes: allowed
+#
+#   policies:
+#     defaults: {fail_closed: true, deny_unlisted_operations: true}
+#
+#     approvals:
+#       production_write_approval:
+#         match: {environments: [production], effects: [write, destructive]}
+#         approval:
+#           type: human
+#           approver_groups: [fulfillment-operations]
+#           timeout: 15m
+#           on_timeout: reject
+#         evidence:
+#           capture: [requester, approver, decision, reason, timestamp]
+#
+#     retries:
+#       order_lookup_retry:
+#         match: {route: get_order, response_status: 404}
+#         max_attempts: 3
+#         initial_delay: 1s
+#         backoff: exponential
+#         max_delay: 5s
+#
+#     rate_limits:
+#       order_write_rate_limit:
+#         match: {route: place_order}
+#         limit: 10
+#         window: 1m
+#         key: $actor.id
+#         on_exceed: block
+#
+#     redaction:
+#       redact_sensitive_data:
+#         request_paths: [$request.headers.authorization, $request.body.pii]
+#         response_paths: [$response.body.pii]
+#         replacement: '[REDACTED]'
+#
+#     validation:                     # the layer §3.3 defers to
+#       strict_payloads:
+#         description: >-
+#           Enforce model conformance on requests and responses. This is where
+#           JSON Schema constructs (pattern, minimum, additionalProperties,
+#           $ref) would live. `models:` deliberately does not do this.
+#
+#   agents:
+#     order_assistant:
+#       permissions:
+#         allow: {routes: [place_order, get_order], flows: [order_lifecycle]}
+#         deny: [unlisted_routes, direct_database_access, secret_access]
+#       constraints:
+#         max_actions_per_request: 1
+#         require_idempotency_for_writes: true
+#         require_post_write_verification: true
+#       escalation:
+#         when: [approval_rejected, retry_exhausted, policy_blocked]
+#         destination: fulfillment-operations
+#
+#   events:
+#     order_created:
+#       when: {route: place_order, response_status: 201}
+#       publish:
+#         topic: orders.created
+#         payload: {order_id: "{create.response.body.order_id}"}
+#
+#   infrastructure:
+#     references:
+#       storage: {orders: {type: dynamodb, resource: orders}}
+#       messaging: {fulfillment: {type: sqs, resource: order-processing}}
+
+
+# =============================================================================
+# 8. RUNTIME EVIDENCE                                               [EXTENDED]
+# =============================================================================
+# Shape is controlled by the hosted runtime, not by contract YAML.
 runtime:
-  correlation_id:
-    generate: true
-    response_header: X-Correlation-ID
-
   evidence:
-    directory: .supercontracts/runs/$run.id
-    outputs:
-      run: run.json
-      state: state.json
-      steps: steps.json
-      events: events.jsonl
-      io: io.json
-      ai_context: ai_context.md
-    retention:
-      production: 365d
-      non_production: 30d
-    integrity:
-      hash_artifacts: true
-      append_only_events: true
+    # Written beside the contract in Explorer when `connection_id` is passed to
+    # run_contract:
+    artifacts:
+      run: __run.json               # run metadata and step results
+      response: __response.json     # response bodies
+      ai_context: __ai_context.md   # generated summary for the next agent turn
 
   ai_context:
-    include:
-      - execution_summary
-      - policy_decisions
-      - approval_history
-      - failed_assertions
-      - retry_history
-      - final_state
-      - remediation_hint
-    exclude:
-      - hidden_model_reasoning
-      - secrets
-      - raw_authorization_headers
+    # Opt in via `generate_ai_context` on run_contract.
+    include: [execution_summary, failed_assertions, final_state, remediation_hint]
+    exclude: [secrets, authorization_headers]
 
-# -----------------------------------------------------------------------------
-# MCP AND IDE INTEGRATIONS
-# WHEN TO USE: Expose approved operations and workflows to Cursor™ or other MCP
-# clients. Use explicit exposure, strict validation, and deny-unlisted-tool controls.
-# -----------------------------------------------------------------------------
-integrations:
-  mcp:
-    server:
-      name: order-service-mcp
-      version: "1.0.0"
-    exposure: explicit
-    tools:
-      place_order:
-        uses: operation.place_order
-        risk: medium
-        approval_policy: production_write_approval
-      get_order:
-        uses: operation.get_order
-        risk: low
-      run_order_lifecycle:
-        uses: workflow.order_lifecycle
-        risk: medium
-    safety:
-      strict_mode: true
-      deny_unlisted_tools: true
-      validate_inputs: true
-      validate_outputs: true
-      enforce_agent_permissions: true
-      enforce_environment_policies: true
+  # [PROPOSED] — retention windows, artifact hashing, append-only event logs and
+  # correlation-id injection appear in the retired specs with no observable
+  # implementation.
 
-  ide:
-    cursor:
-      enabled: true
-      discovery: true
-      execute: true
-      test: true
-      audit: true
-      evidence_path: .supercontracts/runs
-      expose_decision_summary: true
-      expose_hidden_model_reasoning: false
 
-# -----------------------------------------------------------------------------
-# OPTIONAL INFRASTRUCTURE REFERENCES
-# WHEN TO USE: Add non-secret references when runtime behavior depends on storage,
-# messaging, queues, or other infrastructure. Keep deployment credentials elsewhere.
-# -----------------------------------------------------------------------------
-infrastructure:
-  references:
-    storage:
-      orders:
-        type: dynamodb
-        resource: orders
-    messaging:
-      fulfillment:
-        type: sqs
-        resource: order-processing
+# =============================================================================
+# 9. MCP SURFACE                                                    [EXTENDED]
+# =============================================================================
+# Exposed by the SuperContracts MCP server (mcp_downloads/). Configured by the
+# server, not declared in contract YAML. Listed so contract authors know what
+# their contracts can be driven by.
+#
+#   Contracts   list_contracts · get_contract · save_contract · run_contract
+#               list_test_runs · get_run · resolve_resource
+#   Guarded     list_guarded_tools · validate_guarded · invoke_guarded
+#   Skills      resolve_skill · list_skills · get_skill · list_skill_tools
+#               run_skill
+#   Approvals   request_approval · get_approval_status · decide_approval
+#
+# Typical flow: list_contracts → get_contract → run_contract → get_run
+
+
+# =============================================================================
+# 10. CONFORMANCE
+# =============================================================================
+# An implementation conforms to SuperContracts 0.10 CORE if it:
+#
+#   1. Accepts all four envelope spellings (§1.2) and dispatches on `type`.
+#   2. Supports api-contract, guarded-service and skill in full (§§3–5).
+#   3. Implements the reference and predicate languages per
+#      supercontracts-expression-grammar.md §§1–2, including rule R1
+#      (type-directed numeric segments) and rule R10 (fail before send).
+#   4. Evaluates guardrails in document order, first match wins, with a
+#      mandatory `default` (§4.1).
+#   5. Compares decision values case-insensitively and treats any unrecognized
+#      value as BLOCK (§2.2).
+#   6. Accepts every DEPRECATED variant named in this document without error.
+#   7. Ignores PROPOSED blocks, warning rather than failing.
+#
+# Conformance is not currently machine-checkable. A validator and a conformance
+# corpus are the next artifacts required, and are prerequisites for calling any
+# version of this document 1.0 — a format that cannot be independently verified
+# cannot be independently implemented.
