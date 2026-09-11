@@ -93,8 +93,8 @@ Each subfolder has its own README with setup steps.
 
 Additional specs and recipes live at the repo root:
 
-- [`apilabs-supercontracts-DSL-minimal-spec.yaml`](../apilabs-supercontracts-DSL-minimal-spec.yaml) — start here for prototypes
-- [`apilabs-supercontracts-spec.yml`](../apilabs-supercontracts-spec.yml) — production-grade controls
+- [`apilabs-supercontracts-spec.yml`](../apilabs-supercontracts-spec.yml) — the specification
+- [`supercontracts-expression-grammar.md`](../supercontracts-expression-grammar.md) — expression grammar (normative companion)
 - [`customer_submitted_contracts/`](../customer_submitted_contracts/) — community examples (refunds, scraping, etc.)
 - [`mcp_downloads/`](../mcp_downloads/) — MCP server install guide
 
@@ -256,8 +256,8 @@ tests:
 - [Supabase CRUD demo](./%20supabase-crud-local-contracts/README.md)
 - [Ngrok / local backend demo](./supercontracts-mcp-ngrok/README.md)
 - [MCP install guide](../mcp_downloads/install_mcp_help.md)
-- [Minimal DSL spec](../apilabs-supercontracts-DSL-minimal-spec.yaml)
-- [Enterprise DSL spec](../apilabs-supercontracts-spec.yml)
+- [SuperContract DSL spec](../apilabs-supercontracts-spec.yml)
+- [Expression grammar](../supercontracts-expression-grammar.md)
 - [Demo video](https://youtu.be/GAt-V7jL4e0?si=lcWUECktH2ZkjOOw) — test workflows from Cursor with auto-generated AI context
 
 ## Support
