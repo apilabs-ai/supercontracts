@@ -1,0 +1,50 @@
+version: "1"
+
+domain: github.com
+mcp_endpoint: https://api.githubcopilot.com/mcp/
+
+auth:
+  type: bearer
+  in: header
+  secret_arn: {{GITHUB_TOKEN_SECRET_ARN}}
+intents:
+  list_pull_requests:
+    tool: list_pull_requests
+
+  read_pull_request:
+    tool: pull_request_read
+    args:
+      method: get
+
+  merge_pull_request:
+    tool: merge_pull_request
+
+guardrails:
+  - id: allow_list_pull_requests
+    when: action == "list_pull_requests" && owner != "" && repo != ""
+    decision: ALLOW
+    reason: Listing pull requests is a safe read-only operation.
+
+  - id: allow_read_pull_request
+    when: action == "read_pull_request"
+    decision: ALLOW
+    reason: Reading pull-request information is safe.
+
+  - id: block_invalid_merge
+    when: action == "merge_pull_request" && pullNumber <= 0
+    decision: BLOCK
+    reason: A valid pull-request number is required.
+
+  - id: block_unbound_merge
+    when: action == "merge_pull_request" && expectedHeadSha == ""
+    decision: BLOCK
+    reason: The merge must be tied to the exact approved commit.
+
+  - id: approve_pull_request_merge
+    when: action == "merge_pull_request" && owner != "" && repo != "" && pullNumber > 0 && expectedHeadSha != ""
+    decision: APPROVAL_REQUIRED
+    approval_provider: slack
+    reason: Pull-request merges require maintainer approval.
+
+default:
+  decision: BLOCK

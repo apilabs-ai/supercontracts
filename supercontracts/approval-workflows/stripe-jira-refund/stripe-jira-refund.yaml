@@ -1,0 +1,46 @@
+version: "1"
+
+domain: stripe.com
+mcp_endpoint: https://mcp.stripe.com
+
+auth:
+  type: bearer
+  in: header
+  secret_arn: {stripe_api_secret_arn}
+
+intents:
+  list_payments:
+    tool: stripe_api_read
+    args:
+      stripe_api_operation_id: GetPaymentIntents
+
+  create_refund:
+    tool: stripe_api_write
+    args:
+      stripe_api_operation_id: PostRefunds
+      livemode: false
+
+guardrails:
+  - id: allow_list_payments
+    when: action == "list_payments"
+    decision: ALLOW
+    reason: Listing Stripe payments is read-only.
+
+  - id: block_invalid_refund
+    when: action == "create_refund" && amount_dollars <= 0
+    decision: BLOCK
+    reason: Refund amount must be greater than zero.
+
+  - id: approve_large_refund
+    when: action == "create_refund" && amount_dollars > 500 && payment_intent != ""
+    decision: APPROVAL_REQUIRED
+    approval_provider: jira
+    reason: Stripe refunds above $500 require Jira approval.
+
+  - id: allow_small_refund
+    when: action == "create_refund" && amount_dollars > 0 && amount_dollars <= 500 && payment_intent != ""
+    decision: ALLOW
+    reason: Stripe refunds up to $500 are allowed automatically.
+
+default:
+  decision: BLOCK
