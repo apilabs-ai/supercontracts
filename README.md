@@ -97,6 +97,8 @@ Every tool call runs through the same guardrails, approvals, and evidence captur
 
 ### Examples
 
+Provider-focused API-testing examples are organized under [`api-testing-supercontracts/`](./api-testing-supercontracts/), with separate GitHub, Stripe, and Supabase folders. Each folder contains a same-named contract YAML and its setup and test guide.
+
 Walk through a full Cursor session using an app-talk contract that syncs Google Forms submissions into Zoho CRM Leads:
 
 [google_forms_zoho_leads.yaml](https://github.com/apilabs-ai/apilabs_api_contract_recipes_pvt/blob/main/app_talk_contract/google_forms_zoho_leads.yaml)

@@ -1,0 +1,172 @@
+# Five Stripe videos: three intentional passes and two intentional failures.
+# Store a Stripe TEST MODE key in API Labs Auth Vault. Never place it in this file.
+auto_skills: false
+contract:
+  watermark: "supercontracts-stripe-api-testing"
+  dsl_version: "1.0"
+api:
+  name: "Stripe Test API"
+  version: "v1"
+  base_url: "https://api.stripe.com"
+auth:
+  type: bearer
+  in: header
+  secret_arn: "arn:apilabs:secret:CHANGE_ME_STRIPE_TEST_SECRET_ID"
+
+models:
+  StripeAccount:
+    description: "Expected Stripe account response; extra provider fields are allowed."
+    required: [id, object, country, charges_enabled]
+    id: {type: string, pattern: "^acct_"}
+    object: {type: string, enum: [account]}
+    country: {type: string, minLength: 2}
+    charges_enabled: boolean
+  StripeAccountWrongCountryType:
+    description: "Intentional mismatch used to demonstrate schema failure evidence."
+    required: [id, object, country]
+    id: string
+    object: {type: string, enum: [account]}
+    country: integer
+  StripeCustomer:
+    description: "Expected Stripe customer response."
+    required: [id, object, email, livemode, created]
+    id: {type: string, pattern: "^cus_"}
+    object: {type: string, enum: [customer]}
+    email: {type: string, pattern: "^[^@]+@[^@]+\\.[^@]+$"}
+    fields:
+      description: {type: string, nullable: true}
+    livemode: boolean
+    created: integer
+  StripeDeletedCustomer:
+    required: [id, object, deleted]
+    id: {type: string, pattern: "^cus_"}
+    object: {type: string, enum: [customer]}
+    deleted: boolean
+  StripeErrorDetail:
+    required: [message, type]
+    message: string
+    fields:
+      type: string
+    code: {type: string, nullable: true}
+  StripeError:
+    required: [error]
+    error: StripeErrorDetail
+
+routes:
+  get_account:
+    method: GET
+    path: /v1/account
+    responses:
+      200: StripeAccount
+  get_account_with_wrong_schema:
+    description: "Same endpoint with an intentionally incorrect expected model."
+    method: GET
+    path: /v1/account
+    responses:
+      200: StripeAccountWrongCountryType
+  create_customer:
+    method: POST
+    path: /v1/customers
+    headers:
+      Content-Type: "application/x-www-form-urlencoded"
+    request:
+      encoding: form
+    responses:
+      200: StripeCustomer
+  get_customer:
+    method: GET
+    path: /v1/customers/{customer_id}
+    params:
+      customer_id: {type: string, in: path, required: true}
+    responses:
+      200: StripeCustomer
+  delete_customer:
+    method: DELETE
+    path: /v1/customers/{customer_id}
+    params:
+      customer_id: {type: string, in: path, required: true}
+    responses:
+      200: StripeDeletedCustomer
+  get_missing_customer:
+    method: GET
+    path: /v1/customers/cus_supercontracts_missing_video
+    responses:
+      404: StripeError
+
+flows:
+  account_validation:
+    steps:
+      - step: account
+        action: get_account
+  account_schema_mismatch:
+    steps:
+      - step: account
+        action: get_account_with_wrong_schema
+  customer_lifecycle:
+    steps:
+      - step: create
+        action: create_customer
+        inputs:
+          body:
+            email: "supercontracts-pass@example.com"
+            description: "SuperContracts customer lifecycle"
+      - step: get
+        action: get_customer
+        inputs:
+          customer_id: create.response.body.id
+      - step: cleanup
+        action: delete_customer
+        inputs:
+          customer_id: create.response.body.id
+  customer_value_mismatch:
+    description: "All schema checks pass; the business-value assertion fails after cleanup."
+    steps:
+      - step: create
+        action: create_customer
+        inputs:
+          body:
+            email: "supercontracts-actual@example.com"
+            description: "SuperContracts expected versus actual demo"
+      - step: get
+        action: get_customer
+        inputs:
+          customer_id: create.response.body.id
+      - step: cleanup
+        action: delete_customer
+        inputs:
+          customer_id: create.response.body.id
+  missing_customer_validation:
+    steps:
+      - step: missing_customer
+        action: get_missing_customer
+
+tests:
+  stripe_account_response_validation:
+    description: "Account status and schema constraints all pass."
+    execute: account_validation
+    expect: {account: 200}
+    verify:
+      - "account.response.body.object == 'account'"
+  stripe_account_country_contract:
+    description: "The real country is a string; the declared integer type intentionally fails."
+    execute: account_schema_mismatch
+    expect: {account: 200}
+  stripe_customer_lifecycle:
+    description: "Create, retrieve and delete with schema validation on every step."
+    execute: customer_lifecycle
+    expect: {create: 200, get: 200, cleanup: 200}
+    verify:
+      - "create.response.body.email == 'supercontracts-pass@example.com'"
+      - "get.response.body.email == 'supercontracts-pass@example.com'"
+      - "cleanup.response.body.deleted == true"
+  stripe_customer_email_contract:
+    description: "Schemas pass, but returned email differs from the expected business value."
+    execute: customer_value_mismatch
+    expect: {create: 200, get: 200, cleanup: 200}
+    verify:
+      - "get.response.body.email == 'supercontracts-expected@example.com'"
+      - "cleanup.response.body.deleted == true"
+  stripe_missing_customer_behavior:
+    description: "Expected 404 response also matches the Stripe error model."
+    execute: missing_customer_validation
+    expect: {missing_customer: 404}

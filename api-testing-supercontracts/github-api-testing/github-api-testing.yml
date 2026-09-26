@@ -1,0 +1,143 @@
+# Five GitHub videos: two intentional passes and three intentional failures.
+# Store the GitHub token in API Labs Auth Vault. Never place it in this file.
+auto_skills: false
+contract:
+  watermark: "supercontracts-github-api-testing"
+  dsl_version: "1.0"
+api:
+  name: "GitHub REST API"
+  version: "2022-11-28"
+  base_url: "https://api.github.com"
+auth:
+  type: bearer
+  in: header
+  secret_arn: "arn:apilabs:secret:CHANGE_ME_GITHUB_TOKEN_SECRET_ID"
+
+models:
+  GitHubUser:
+    description: "Expected authenticated GitHub user response."
+    required: [id, login, type, site_admin]
+    id: integer
+    login: {type: string, minLength: 1}
+    fields:
+      type: {type: string, enum: [User]}
+    site_admin: boolean
+  GitHubUserWrongIDType:
+    description: "Intentional mismatch: GitHub returns numeric id, not string."
+    required: [id, login, type]
+    id: string
+    login: string
+    fields:
+      type: {type: string, enum: [User]}
+  GitHubRepository:
+    required: [id, name, full_name, private]
+    id: integer
+    name: string
+    full_name: string
+    private: boolean
+  GitHubRepositoryList:
+    type: array
+    items: GitHubRepository
+  GitHubRateLimitCore:
+    required: [limit, remaining, reset]
+    limit: integer
+    remaining: integer
+    reset: integer
+  GitHubRateLimitResources:
+    required: [core]
+    core: GitHubRateLimitCore
+  GitHubRateLimit:
+    required: [resources]
+    resources: GitHubRateLimitResources
+  GitHubError:
+    required: [message, documentation_url]
+    message: string
+    documentation_url: string
+
+routes:
+  get_authenticated_user:
+    method: GET
+    path: /user
+    headers: &github_headers
+      Accept: "application/vnd.github+json"
+      X-GitHub-Api-Version: "2022-11-28"
+    responses:
+      200: GitHubUser
+  get_authenticated_user_with_wrong_schema:
+    description: "Same endpoint with an intentionally incorrect id type."
+    method: GET
+    path: /user
+    headers: *github_headers
+    responses:
+      200: GitHubUserWrongIDType
+  list_authenticated_user_repositories:
+    method: GET
+    path: /user/repos
+    headers: *github_headers
+    params:
+      per_page: {type: string, in: query, required: true}
+    responses:
+      200: GitHubRepositoryList
+  get_rate_limit:
+    method: GET
+    path: /rate_limit
+    headers: *github_headers
+    responses:
+      200: GitHubRateLimit
+  get_missing_repository:
+    method: GET
+    path: /repos/octocat/supercontracts-intentionally-missing-video-repository
+    headers: *github_headers
+    responses:
+      404: GitHubError
+
+flows:
+  user_response_validation:
+    steps:
+      - step: user
+        action: get_authenticated_user
+  user_schema_mismatch:
+    steps:
+      - step: user
+        action: get_authenticated_user_with_wrong_schema
+  read_api_regression:
+    steps:
+      - step: user
+        action: get_authenticated_user
+      - step: repositories
+        action: list_authenticated_user_repositories
+        inputs:
+          per_page: "5"
+      - step: rate_limit
+        action: get_rate_limit
+  missing_repository_validation:
+    steps:
+      - step: missing_repository
+        action: get_missing_repository
+
+tests:
+  github_user_response_validation:
+    description: "Authenticated user status and schema constraints all pass."
+    execute: user_response_validation
+    expect: {user: 200}
+    verify:
+      - "user.response.body.type == 'User'"
+  github_user_id_contract:
+    description: "GitHub returns numeric id; the declared string type intentionally fails."
+    execute: user_schema_mismatch
+    expect: {user: 200}
+  github_read_api_regression:
+    description: "User, repository array items and rate-limit nesting are schema validated."
+    execute: read_api_regression
+    expect: {user: 200, repositories: 200, rate_limit: 200}
+    verify:
+      - "rate_limit.response.body.resources.core.limit > 0"
+      - "rate_limit.response.body.resources.core.remaining >= 0"
+  github_repository_status_contract:
+    description: "Repository response schema is valid, but expected status is intentionally wrong."
+    execute: read_api_regression
+    expect: {user: 200, repositories: 201, rate_limit: 200}
+  github_missing_repository_behavior:
+    description: "Error body matches GitHubError, but expected status is intentionally 400 instead of 404."
+    execute: missing_repository_validation
+    expect: {missing_repository: 400}

@@ -1,0 +1,263 @@
+# Ten controlled Supabase videos: five expected passes and five intentional failures.
+# Use a disposable Supabase project/table created with SUPABASE_VIDEO_SETUP.sql.
+# Keep the anon key in API Labs Auth Vault; never paste it into this file.
+auto_skills: false
+contract:
+  watermark: "supercontracts-supabase-api-testing"
+  dsl_version: "1.0"
+
+api:
+  name: "Supabase Customer Demo API"
+  version: "v1"
+  base_url: "https://bqhwatsqitofoufnjxln.supabase.co"
+
+auth:
+  type: api_key
+  in: header
+  secret_arn: "arn:apilabs:secret:CHANGE_ME_SUPABASE_ANON_KEY_SECRET_ID"
+
+models:
+  Customer:
+    description: "Expected customer row from the controlled Supabase demo table."
+    required: [id, name, email, plan, active, created_at]
+    id: uuid
+    name: {type: string, minLength: 1}
+    email: {type: string, pattern: "^[^@]+@[^@]+\\.[^@]+$"}
+    plan: {type: string, enum: [free, premium]}
+    active: boolean
+    created_at: datetime
+
+  CustomerWrongID:
+    description: "Intentional mismatch for the Phase 3 failure video."
+    required: [id, name, email, active]
+    id: integer
+    name: string
+    email: string
+    active: boolean
+
+  CustomerCreate:
+    required: [name, email, plan, active]
+    name: string
+    email: string
+    plan: string
+    active: boolean
+
+  CustomerList:
+    type: array
+    items: Customer
+
+  CustomerWrongIDList:
+    type: array
+    items: CustomerWrongID
+
+  PostgRESTError:
+    required: [code, message]
+    code: string
+    message: string
+    details: {type: string, nullable: true}
+    hint: {type: string, nullable: true}
+
+routes:
+  list_fixture_customer:
+    method: GET
+    path: /rest/v1/sc_customers
+    params:
+      email: {type: string, in: query, required: true}
+      select: {type: string, in: query, required: true}
+    responses:
+      200: CustomerList
+
+  list_fixture_wrong_schema:
+    description: "Read-only endpoint with an intentionally wrong response model."
+    method: GET
+    path: /rest/v1/sc_customers
+    params:
+      email: {type: string, in: query, required: true}
+      select: {type: string, in: query, required: true}
+    responses:
+      200: CustomerWrongIDList
+
+  create_customer:
+    method: POST
+    path: /rest/v1/sc_customers
+    headers:
+      Content-Type: application/json
+      Prefer: return=representation
+    request:
+      body: CustomerCreate
+    responses:
+      201: CustomerList
+
+  get_customer:
+    method: GET
+    path: /rest/v1/sc_customers
+    params:
+      id: {type: string, in: query, required: true}
+      select: {type: string, in: query, required: true}
+    responses:
+      200: CustomerList
+
+  delete_customer:
+    method: DELETE
+    path: /rest/v1/sc_customers
+    headers:
+      Prefer: return=representation
+    params:
+      id: {type: string, in: query, required: true}
+    responses:
+      200: CustomerList
+
+  invalid_uuid_request:
+    description: "Controlled invalid input used to prove correct 400 behavior."
+    method: GET
+    path: /rest/v1/sc_customers
+    params:
+      id: {type: string, in: query, required: true}
+      select: {type: string, in: query, required: true}
+    responses:
+      400: PostgRESTError
+
+flows:
+  phase_1_read:
+    steps:
+      - step: customer
+        action: list_fixture_customer
+        inputs:
+          email: "eq.supercontracts.fixture@example.com"
+          select: "*"
+
+  phase_2_lifecycle:
+    steps:
+      - step: create
+        action: create_customer
+        inputs:
+          body:
+            name: "Video Customer"
+            email: "supercontracts.lifecycle@example.com"
+            plan: premium
+            active: true
+      - step: get
+        action: get_customer
+        inputs:
+          id: "eq.{create.response.body.0.id}"
+          select: "*"
+      - step: cleanup
+        action: delete_customer
+        inputs:
+          id: "eq.{create.response.body.0.id}"
+
+  phase_3_schema_pass:
+    steps:
+      - step: customer
+        action: list_fixture_customer
+        inputs:
+          email: "eq.supercontracts.fixture@example.com"
+          select: "*"
+
+  phase_3_schema_fail:
+    steps:
+      - step: customer
+        action: list_fixture_wrong_schema
+        inputs:
+          email: "eq.supercontracts.fixture@example.com"
+          select: "*"
+
+  phase_4_regression:
+    description: "A grouped read-only regression flow with independent checks."
+    steps:
+      - step: list_customer
+        action: list_fixture_customer
+        inputs:
+          email: "eq.supercontracts.fixture@example.com"
+          select: "*"
+      - step: get_customer
+        action: get_customer
+        inputs:
+          id: "eq.11111111-1111-4111-8111-111111111111"
+          select: "*"
+
+  phase_5_invalid_input:
+    steps:
+      - step: invalid_customer_id
+        action: invalid_uuid_request
+        inputs:
+          id: "eq.not-a-uuid"
+          select: "*"
+
+tests:
+  customer_response_status_pass:
+    description: "Phase 1 pass: request, status, JSON response, and value checks succeed."
+    execute: phase_1_read
+    expect: {customer: 200}
+    verify:
+      - "customer.response.body.length >= 1"
+      - "customer.response.body.0.plan == 'premium'"
+
+  customer_response_status_fail:
+    description: "Phase 1 fail: Supabase returns 200 while the contract intentionally expects 201."
+    execute: phase_1_read
+    expect: {customer: 201}
+
+  customer_lifecycle_pass:
+    description: "Phase 2 pass: create, extract ID, get the same row, then delete it."
+    execute: phase_2_lifecycle
+    expect: {create: 201, get: 200, cleanup: 200}
+    verify:
+      - "create.response.body.0.id == get.response.body.0.id"
+      - "get.response.body.0.email == 'supercontracts.lifecycle@example.com'"
+
+  customer_chained_value_fail:
+    description: "Phase 2 fail: the complete lifecycle cleans up, then an intentional chained-ID assertion fails."
+    execute: phase_2_lifecycle
+    expect: {create: 201, get: 200, cleanup: 200}
+    verify:
+      - "get.response.body.0.id == '00000000-0000-4000-8000-000000000000'"
+
+  invalid_customer_behavior_pass:
+    description: "Phase 5 pass: invalid UUID correctly returns JSON error within the latency limit."
+    execute: phase_5_invalid_input
+    expect: {invalid_customer_id: 400}
+    expect_headers:
+      invalid_customer_id:
+        content-type: {contains: application/json}
+    expect_duration:
+      invalid_customer_id: {max_ms: 2000}
+    verify:
+      - "invalid_customer_id.response.body.code != null"
+
+  customer_schema_validation_pass:
+    description: "Phase 3 pass: fixture matches UUID, email, enum, boolean, and datetime constraints."
+    execute: phase_3_schema_pass
+    expect: {customer: 200}
+
+  customer_id_type_contract_fail:
+    description: "Phase 3 fail: contract intentionally expects integer while Supabase returns a UUID string."
+    execute: phase_3_schema_fail
+    expect: {customer: 200}
+
+  customer_regression_checks_pass:
+    description: "Phase 4 pass: both grouped regression steps and business assertions pass."
+    execute: phase_4_regression
+    expect: {list_customer: 200, get_customer: 200}
+    verify:
+      - "list_customer.response.body.length >= 1"
+      - "get_customer.response.body.0.id == '11111111-1111-4111-8111-111111111111'"
+      - "get_customer.response.body.0.plan == 'premium'"
+
+  customer_regression_value_fail:
+    description: "Phase 4 fail: requests pass but one regression expectation intentionally fails."
+    execute: phase_4_regression
+    expect: {list_customer: 200, get_customer: 200}
+    verify:
+      - "list_customer.response.body.length >= 1"
+      - "get_customer.response.body.0.plan == 'enterprise'"
+
+  invalid_customer_latency_fail:
+    description: "Phase 5 fail: correct 400 response intentionally violates an unrealistic 1 ms limit."
+    execute: phase_5_invalid_input
+    expect: {invalid_customer_id: 400}
+    expect_headers:
+      invalid_customer_id:
+        content-type: {contains: application/json}
+    expect_duration:
+      invalid_customer_id: {max_ms: 1}
