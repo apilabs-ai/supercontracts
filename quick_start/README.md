@@ -28,6 +28,10 @@ The MCP token used by Cursor is separate from these provider credentials. Never 
 
 Use the GitHub example for the first demo because it has no date input and returns a short, recognizable result.
 
+**[Watch the complete Cursor Quick Start video](https://drive.google.com/file/d/1zqJGDPoM3w9FN-yXL2a4E6o6apey8kgU/view?usp=sharing)**
+
+The video shows the SuperContracts MCP connection, contract discovery, `get_contract`, and a successful `run_contract` execution of the GitHub example.
+
 ### Confirm the MCP connection
 
 Open Cursor's MCP settings and confirm that the `supercontracts` server shows **Connected**.

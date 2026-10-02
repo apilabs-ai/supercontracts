@@ -149,7 +149,7 @@ Start with one of these read-only examples:
 
 Each contract makes one safe provider request and checks for a successful response. Follow the [Quick Start examples guide](./quick_start/) to connect the required provider account and save the contract in API Contract Model.
 
-The guide includes Cursor connection screenshots and the exact prompts for loading and running the GitHub example.
+The guide includes Cursor connection screenshots, the exact prompts for loading and running the GitHub example, and a [complete Cursor Quick Start video](https://drive.google.com/file/d/1zqJGDPoM3w9FN-yXL2a4E6o6apey8kgU/view?usp=sharing).
 
 ### 3. Run your first SuperContract
 
