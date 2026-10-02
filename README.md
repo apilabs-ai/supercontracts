@@ -149,6 +149,8 @@ Start with one of these read-only examples:
 
 Each contract makes one safe provider request and checks for a successful response. Follow the [Quick Start examples guide](./quick_start/) to connect the required provider account and save the contract in API Contract Model.
 
+The guide includes Cursor connection screenshots and the exact prompts for loading and running the GitHub example.
+
 ### 3. Run your first SuperContract
 
 Use the GitHub example for the first run. Ask your AI client:

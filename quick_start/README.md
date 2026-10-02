@@ -28,6 +28,20 @@ The MCP token used by Cursor is separate from these provider credentials. Never 
 
 Use the GitHub example for the first demo because it has no date input and returns a short, recognizable result.
 
+### Confirm the MCP connection
+
+Open Cursor's MCP settings and confirm that the `supercontracts` server shows **Connected**.
+
+<p align="center">
+  <img src="../images/quick_start/quick_start_01_mcp_connected.png" alt="Cursor showing the SuperContracts MCP server connected in the local environment" width="560">
+</p>
+
+Open the server configuration and verify that its tools include `list_contracts`, `get_contract`, `run_contract`, and `get_run`. A connected status without a populated tool list is not sufficient verification.
+
+<p align="center">
+  <img src="../images/quick_start/quick_start_02_mcp_connected.png" alt="Cursor showing the tools exposed by the SuperContracts MCP server" width="500">
+</p>
+
 ### 1. Load the saved contract
 
 Ask Cursor:
@@ -65,6 +79,8 @@ Result: PASS
 ```
 
 The response contains up to 10 repositories, sorted by most recently updated.
+
+> Before publishing a screenshot or recording, mask MCP tokens, provider Secret ARNs, connection IDs, private repository names, and other account-specific data.
 
 ### 3. Inspect the evidence
 
