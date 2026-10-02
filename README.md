@@ -137,68 +137,45 @@ Open Copilot Chat in Agent mode and enable `supercontracts` in the tools picker.
 
 > MCP authentication and provider authentication are separate. The MCP token connects your AI client to SuperContracts. GitHub, Stripe, Slack, and other provider credentials are stored separately in Auth Vault and referenced from contracts. Never commit either kind of secret.
 
-### 2. Choose your first contract
+### 2. Choose your first SuperContract
 
-Start with the included GitHub guardrail contract:
+Start with one of these read-only examples:
 
-```yaml
-supercontract: github_mcp_guardrails
-version: "0.1.0"
+| Provider | Ask your AI agent | Contract |
+| --- | --- | --- |
+| GitHub | “List my repositories.” | [`GitHub → Read`](./quick_start/github-read-repositories.yml) |
+| Gmail | “Show my 5 most recent emails.” | [`Gmail → Read`](./quick_start/gmail-read-emails.yml) |
+| Google Calendar | “Show my upcoming events.” | [`Google Calendar → Read`](./quick_start/google-calendar-read-events.yml) |
 
-service:
-  name: github
-  binding:
-    repository: your-org/your-repo
+Each contract makes one safe provider request and checks for a successful response. Follow the [Quick Start examples guide](./quick_start/) to connect the required provider account and save the contract in API Contract Model.
 
-tools:
-  - name: create_branch
-    upstream_tool: create_branch
-  - name: push
-    upstream_tool: push_files
+### 3. Run your first SuperContract
 
-guardrails:
-  - id: block_push_to_main
-    when: action == "push" && branch == "main"
-    decision: BLOCK
-    reason: Direct pushes to main are not allowed.
-
-  - id: allow_create_branch
-    when: action == "create_branch"
-    decision: ALLOW
-
-default:
-  decision: BLOCK
-```
-
-This contract allows branch creation, blocks direct pushes to `main`, and denies actions that do not match an explicit rule.
-
-Use the complete runnable example: [`github_mcp_guardrail.yaml`](./supercontracts/mcp_guardrail_contracts/github_mcp_guardrail.yaml).
-
-### 3. Validate before executing
-
-Ask your AI client:
+Use the GitHub example for the first run. Ask your AI client:
 
 ```text
-Use SuperContracts to validate a direct push to the main branch. Do not execute it.
+Use SuperContracts to find the saved quick-start contract for reading GitHub repositories.
+Call get_contract and show me its test names. Do not run it yet.
 ```
 
-The client should call `validate_guarded` and return a policy decision similar to:
+After it returns `github_read_repositories`, ask:
 
 ```text
-Action:   push
-Target:   main
-Rule:     block_push_to_main
-Decision: BLOCK
-Reason:   Direct pushes to main are not allowed.
+Run the github_read_repositories test from the contract you just loaded.
+Use the complete contract_yaml returned by get_contract and the same connection_id.
+Show the expected-versus-actual assertion and the repositories returned.
 ```
 
-Then try an allowed action:
+The expected result is:
 
 ```text
-Use SuperContracts to validate creating a feature branch. Do not execute it.
+Step: repositories
+Expected status: 200
+Actual status: 200
+Result: PASS
 ```
 
-When validation behaves as expected, use `invoke_guarded` or a saved Skill Register workflow to execute the action. Start with validation for any contract that can change money, data, code, or infrastructure.
+The agent should follow `list_contracts → get_contract → run_contract → get_run`. Passing the complete returned YAML and the same `connection_id` keeps the run evidence associated with the saved contract.
 
 ## What can you build?
 

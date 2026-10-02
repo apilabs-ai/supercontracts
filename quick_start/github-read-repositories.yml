@@ -1,0 +1,56 @@
+# Quick Start: list repositories available to the authenticated GitHub user.
+# Store the GitHub token in API Labs Auth Vault. Never place it in this file.
+auto_skills: false
+contract:
+  watermark: "supercontracts-quick-start-github-read"
+  dsl_version: "1.0"
+
+api:
+  name: "GitHub REST API"
+  version: "2022-11-28"
+  base_url: "https://api.github.com"
+
+auth:
+  type: bearer
+  in: header
+  secret_arn: "arn:apilabs:secret:CHANGE_ME_GITHUB_TOKEN_SECRET_ID"
+
+models:
+  GitHubRepository:
+    required: [id, name, full_name, private]
+    id: integer
+    name: string
+    full_name: string
+    private: boolean
+  GitHubRepositoryList:
+    type: array
+    items: GitHubRepository
+
+routes:
+  list_repositories:
+    method: GET
+    path: /user/repos
+    headers:
+      Accept: "application/vnd.github+json"
+      X-GitHub-Api-Version: "2022-11-28"
+    params:
+      per_page: {type: string, in: query, required: true}
+      sort: {type: string, in: query, required: true}
+    responses:
+      200: GitHubRepositoryList
+
+flows:
+  read_repositories:
+    steps:
+      - step: repositories
+        action: list_repositories
+        inputs:
+          per_page: "10"
+          sort: "updated"
+
+tests:
+  github_read_repositories:
+    description: "List up to 10 repositories visible to the authenticated GitHub user."
+    execute: read_repositories
+    expect:
+      repositories: 200

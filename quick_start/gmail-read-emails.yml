@@ -1,0 +1,54 @@
+# Quick Start: list the five most recent Gmail messages.
+# Store a Google OAuth credential with Gmail read-only access in Auth Vault.
+auto_skills: false
+contract:
+  watermark: "supercontracts-quick-start-gmail-read"
+  dsl_version: "1.0"
+
+api:
+  name: "Gmail API"
+  version: "v1"
+  base_url: "https://gmail.googleapis.com"
+
+auth:
+  type: oauth2
+  in: header
+  secret_arn: "arn:apilabs:secret:CHANGE_ME_GOOGLE_OAUTH_SECRET_ID"
+
+models:
+  GmailMessageReference:
+    required: [id, threadId]
+    id: string
+    threadId: string
+  GmailMessageReferenceList:
+    type: array
+    items: GmailMessageReference
+  GmailMessageList:
+    fields:
+      messages: GmailMessageReferenceList
+
+routes:
+  list_recent_emails:
+    method: GET
+    path: /gmail/v1/users/me/messages
+    params:
+      maxResults: {type: string, in: query, required: true}
+      labelIds: {type: string, in: query, required: true}
+    responses:
+      200: GmailMessageList
+
+flows:
+  read_recent_emails:
+    steps:
+      - step: emails
+        action: list_recent_emails
+        inputs:
+          maxResults: "5"
+          labelIds: "INBOX"
+
+tests:
+  gmail_read_recent_emails:
+    description: "List the five most recent message references in the Gmail inbox."
+    execute: read_recent_emails
+    expect:
+      emails: 200

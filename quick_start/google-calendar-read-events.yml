@@ -1,0 +1,67 @@
+# Quick Start: list upcoming events from the primary Google Calendar.
+# Store a Google OAuth credential with Calendar read-only access in Auth Vault.
+# Before saving the contract, set timeMin below to the current RFC3339 timestamp.
+auto_skills: false
+contract:
+  watermark: "supercontracts-quick-start-google-calendar-read"
+  dsl_version: "1.0"
+
+api:
+  name: "Google Calendar API"
+  version: "v3"
+  base_url: "https://www.googleapis.com"
+
+auth:
+  type: oauth2
+  in: header
+  secret_arn: "arn:apilabs:secret:CHANGE_ME_GOOGLE_OAUTH_SECRET_ID"
+
+models:
+  CalendarEventStart:
+    fields:
+      date: string
+      dateTime: string
+  CalendarEvent:
+    required: [id, status]
+    id: string
+    status: string
+    summary: string
+    start: CalendarEventStart
+  CalendarEventListItems:
+    type: array
+    items: CalendarEvent
+  CalendarEventList:
+    required: [kind, items]
+    fields:
+      kind: string
+      items: CalendarEventListItems
+
+routes:
+  list_upcoming_events:
+    method: GET
+    path: /calendar/v3/calendars/primary/events
+    params:
+      timeMin: {type: string, in: query, required: true}
+      maxResults: {type: string, in: query, required: true}
+      singleEvents: {type: string, in: query, required: true}
+      orderBy: {type: string, in: query, required: true}
+    responses:
+      200: CalendarEventList
+
+flows:
+  read_upcoming_events:
+    steps:
+      - step: events
+        action: list_upcoming_events
+        inputs:
+          timeMin: "CHANGE_ME_CURRENT_RFC3339_TIMESTAMP"
+          maxResults: "10"
+          singleEvents: "true"
+          orderBy: "startTime"
+
+tests:
+  google_calendar_read_upcoming_events:
+    description: "List up to 10 upcoming events from the primary calendar."
+    execute: read_upcoming_events
+    expect:
+      events: 200
