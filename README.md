@@ -31,153 +31,23 @@ API, MCP tool, or SaaS provider
 
 The agent requests an action. SuperContracts evaluates the applicable policy before the action reaches the connected system.
 
-## Quickstart
+## Documentation
 
-Go from a new installation to a protected agent action in three steps.
+### 🚀 Quick Start
 
-### 1. Connect your AI client
+- [What are SuperContracts?](./quick_start/what-are-supercontracts.md)
+- [Connect your AI Agent](./quick_start/connect-your-ai-agent.md)
+- [Authenticate](./quick_start/authenticate.md)
+- [Run your first protected action](./quick_start/run-your-first-protected-action.md)
 
-1. Sign in to [apilabs.ai](https://apilabs.ai).
-2. Open **Auth Vault**, create an **MCP Token**, and download the SuperContracts MCP bridge from **MCP Downloads**.
-3. Start the bridge, then confirm it is healthy:
+### 🤖 AI Clients
 
-```bash
-curl http://127.0.0.1:8080/health
-```
+- [Cursor](./ai_clients/cursor.md)
+- [Claude Code](./ai_clients/claude-code.md)
+- [Codex](./ai_clients/codex.md)
+- [VS Code / GitHub Copilot](./ai_clients/vscode-github-copilot.md)
 
-4. Connect your client to the local Streamable HTTP endpoint:
-
-```text
-http://127.0.0.1:8080/mcp
-```
-
-<details>
-<summary><strong>Cursor</strong></summary>
-
-Create `.cursor/mcp.json` in your project:
-
-```json
-{
-  "mcpServers": {
-    "supercontracts": {
-      "url": "http://127.0.0.1:8080/mcp",
-      "headers": {
-        "Authorization": "Bearer <YOUR_API_LABS_MCP_TOKEN>"
-      }
-    }
-  }
-}
-```
-
-Reload Cursor, open **Settings → MCP**, and confirm that `supercontracts` is connected and exposes tools.
-
-</details>
-
-<details>
-<summary><strong>Claude Code</strong></summary>
-
-Run from the project where you use Claude Code:
-
-```bash
-claude mcp add --transport http supercontracts http://127.0.0.1:8080/mcp
-claude mcp list
-```
-
-Add the MCP bearer token through your supported Claude Code authentication/header configuration. Do not place a real token in a committed project file.
-
-</details>
-
-<details>
-<summary><strong>Codex</strong></summary>
-
-In one terminal, export the MCP token. In the project terminal, register and verify the server:
-
-```bash
-export APILABS_MCP_TOKEN="<YOUR_API_LABS_MCP_TOKEN>"
-codex mcp add supercontracts \
-  --url http://127.0.0.1:8080/mcp \
-  --bearer-token-env-var APILABS_MCP_TOKEN
-codex mcp list
-```
-
-Codex CLI and the Codex IDE extension share MCP configuration.
-
-</details>
-
-<details>
-<summary><strong>VS Code / GitHub Copilot</strong></summary>
-
-Create `.vscode/mcp.json`:
-
-```json
-{
-  "servers": {
-    "supercontracts": {
-      "type": "http",
-      "url": "http://127.0.0.1:8080/mcp",
-      "headers": {
-        "Authorization": "Bearer ${input:apilabs-mcp-token}"
-      }
-    }
-  },
-  "inputs": [
-    {
-      "id": "apilabs-mcp-token",
-      "type": "promptString",
-      "description": "API Labs MCP token",
-      "password": true
-    }
-  ]
-}
-```
-
-Open Copilot Chat in Agent mode and enable `supercontracts` in the tools picker.
-
-</details>
-
-> MCP authentication and provider authentication are separate. The MCP token connects your AI client to SuperContracts. GitHub, Stripe, Slack, and other provider credentials are stored separately in Auth Vault and referenced from contracts. Never commit either kind of secret.
-
-### 2. Choose your first SuperContract
-
-Start with one of these read-only examples:
-
-| Provider | Ask your AI agent | Contract |
-| --- | --- | --- |
-| GitHub | “List my repositories.” | [`GitHub → Read`](./quick_start/github-read-repositories.yml) |
-| Gmail | “Show my 5 most recent emails.” | [`Gmail → Read`](./quick_start/gmail-read-emails.yml) |
-| Google Calendar | “Show my upcoming events.” | [`Google Calendar → Read`](./quick_start/google-calendar-read-events.yml) |
-
-Each contract makes one safe provider request and checks for a successful response. Follow the [Quick Start examples guide](./quick_start/) to connect the required provider account and save the contract in API Contract Model.
-
-The guide includes Cursor connection screenshots, the exact prompts for loading and running the GitHub example, and a [complete Cursor Quick Start video](https://drive.google.com/file/d/1zqJGDPoM3w9FN-yXL2a4E6o6apey8kgU/view?usp=sharing).
-
-### 3. Run your first SuperContract
-
-Use the GitHub example for the first run. Ask your AI client:
-
-```text
-Use SuperContracts to find the saved quick-start contract for reading GitHub repositories.
-Call get_contract and show me its test names. Do not run it yet.
-```
-
-After it returns `github_read_repositories`, ask:
-
-```text
-Run the github_read_repositories test from the contract you just loaded.
-Use the complete contract_yaml returned by get_contract and the same connection_id.
-Show the expected-versus-actual assertion and the repositories returned.
-```
-
-The expected result is:
-
-```text
-Step: repositories
-Expected status: 200
-Actual status: 200
-Result: PASS
-```
-
-The agent should follow `list_contracts → get_contract → run_contract → get_run`. Passing the complete returned YAML and the same `connection_id` keeps the run evidence associated with the saved contract.
+Start with the [Quick Start overview](./quick_start/). It takes you from installation to a protected, read-only GitHub action and includes screenshots plus a complete Cursor video.
 
 ## What can you build?
 
@@ -251,6 +121,8 @@ When a saved API contract is run with its `connection_id`, artifacts can include
 
 | Path | Contents |
 | --- | --- |
+| [`quick_start/`](./quick_start/) | Four-part Quick Start plus GitHub, Gmail, and Google Calendar contracts |
+| [`ai_clients/`](./ai_clients/) | Cursor, Claude Code, Codex, and VS Code / GitHub Copilot setup |
 | [`supercontracts/`](./supercontracts/) | Developer guide, guarded-service contracts, approvals, and workflow examples |
 | [`skills/`](./skills/) | Reusable GitHub, Stripe, and Supabase Skill Register policies |
 | [`api-testing-supercontracts/`](./api-testing-supercontracts/) | Provider-focused API test suites |
