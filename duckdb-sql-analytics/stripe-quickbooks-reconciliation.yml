@@ -1,0 +1,115 @@
+contract:
+  watermark: apilabs
+  version: "1.0"
+
+flows:
+  stripe_quickbooks_reconciliation:
+    description: Reconcile Stripe transactions against QuickBooks with DuckDB.
+    steps:
+      - step: find_stripe_transactions_missing_from_quickbooks
+        action: run_sql
+        inputs:
+          files:
+            stripe_transactions: arn:apilabs:file:2e0b71e8-37b3-43a3-8077-7f284d8c6da7
+            quickbooks_ledger: arn:apilabs:file:f37ee6df-9478-40f8-8257-84417a81adb6
+          sql: |
+            SELECT s.*
+            FROM stripe_transactions AS s
+            LEFT JOIN quickbooks_ledger AS q
+              ON s.transaction_id = q.source_transaction_id
+            WHERE q.source_transaction_id IS NULL
+            LIMIT 100
+          max_rows: 100
+
+      - step: find_gross_amount_mismatches
+        action: run_sql
+        inputs:
+          files:
+            stripe_transactions: arn:apilabs:file:2e0b71e8-37b3-43a3-8077-7f284d8c6da7
+            quickbooks_ledger: arn:apilabs:file:f37ee6df-9478-40f8-8257-84417a81adb6 
+          sql: |
+            SELECT
+              st.transaction_id,
+              st.order_id,
+              st.customer_id,
+              st.gross_amount AS stripe_gross_amount,
+              qb.gross_amount AS quickbooks_gross_amount,
+              st.currency,
+              st.status,
+              st.transaction_date
+            FROM stripe_transactions AS st
+            JOIN quickbooks_ledger AS qb
+              ON st.order_id = qb.order_id
+            WHERE st.gross_amount <> qb.gross_amount
+            LIMIT 100
+          max_rows: 100
+
+      - step: find_fee_amount_mismatches
+        action: run_sql
+        inputs:
+          files:
+            stripe_transactions: arn:apilabs:file:2e0b71e8-37b3-43a3-8077-7f284d8c6da7
+            quickbooks_ledger: arn:apilabs:file:f37ee6df-9478-40f8-8257-84417a81adb6 
+          sql: |
+            SELECT
+              st.transaction_id,
+              st.order_id,
+              st.customer_id,
+              st.fee_amount AS stripe_fee_amount,
+              qb.fee_amount AS quickbooks_fee_amount,
+              st.gross_amount,
+              st.net_amount,
+              st.currency,
+              st.status,
+              st.transaction_date
+            FROM stripe_transactions AS st
+            JOIN quickbooks_ledger AS qb
+              ON st.transaction_id = qb.source_transaction_id
+            WHERE CAST(st.fee_amount AS DOUBLE) <> CAST(qb.fee_amount AS DOUBLE)
+            LIMIT 100
+          max_rows: 100
+
+      - step: compare_all_stripe_quickbooks_transactions
+        action: run_sql
+        inputs:
+          files:
+            stripe_transactions: arn:apilabs:file:2e0b71e8-37b3-43a3-8077-7f284d8c6da7
+            quickbooks_ledger: arn:apilabs:file:f37ee6df-9478-40f8-8257-84417a81adb6 
+          sql: |
+            SELECT
+              COALESCE(s.transaction_id, q.source_transaction_id) AS transaction_id,
+              COALESCE(s.order_id, q.order_id) AS order_id,
+              s.gross_amount AS stripe_gross_amount,
+              q.gross_amount AS quickbooks_gross_amount,
+              s.fee_amount AS stripe_fee_amount,
+              q.fee_amount AS quickbooks_fee_amount,
+              s.net_amount AS stripe_net_amount,
+              q.net_amount AS quickbooks_net_amount,
+              s.status AS stripe_status,
+              q.status AS quickbooks_status,
+              CASE
+                WHEN s.transaction_id IS NULL THEN 'missing in stripe_transactions.csv'
+                WHEN q.source_transaction_id IS NULL THEN 'missing in quickbooks_ledger.csv'
+                ELSE 'value mismatch'
+              END AS difference_type
+            FROM stripe_transactions AS s
+            FULL OUTER JOIN quickbooks_ledger AS q
+              ON s.transaction_id = q.source_transaction_id
+            WHERE s.transaction_id IS NULL
+               OR q.source_transaction_id IS NULL
+               OR s.gross_amount <> q.gross_amount
+               OR s.fee_amount <> q.fee_amount
+               OR s.net_amount <> q.net_amount
+               OR s.status <> q.status
+            ORDER BY order_id
+            LIMIT 100
+          max_rows: 100
+
+tests:
+  stripe_quickbooks_reconciliation:
+    execute: stripe_quickbooks_reconciliation
+    expect:
+      find_stripe_transactions_missing_from_quickbooks: 200
+      find_gross_amount_mismatches: 200
+      find_fee_amount_mismatches: 200
+      compare_all_stripe_quickbooks_transactions: 200

@@ -1,0 +1,182 @@
+contract:
+  watermark: apilabs
+  version: "1.0"
+
+flows:
+  stripe_paypal_quickbooks_reconciliation:
+    description: Reconcile Stripe and PayPal transactions against QuickBooks with DuckDB.
+    steps:
+      - step: find_transactions_missing_from_quickbooks
+        action: run_sql
+        inputs:
+          files:
+            stripe_transactions: arn:apilabs:file:2e0b71e8-37b3-43a3-8077-7f284d8c6da7
+            paypal_transactions: arn:apilabs:file:15744b35-ed84-496f-8e85-626926b45df9
+            quickbooks_ledger: arn:apilabs:file:f37ee6df-9478-40f8-8257-84417a81adb6
+          sql: |
+            SELECT
+              s.transaction_id,
+              s.order_id,
+              s.customer_id,
+              s.gross_amount,
+              s.fee_amount,
+              s.net_amount,
+              s.currency,
+              s.status,
+              s.transaction_date,
+              'stripe' AS source
+            FROM stripe_transactions AS s
+            LEFT JOIN quickbooks_ledger AS q
+              ON q.source_transaction_id = s.transaction_id
+            WHERE q.source_transaction_id IS NULL
+            UNION ALL
+            SELECT
+              p.transaction_id,
+              p.order_id,
+              p.customer_id,
+              p.gross_amount,
+              p.fee_amount,
+              p.net_amount,
+              p.currency,
+              p.status,
+              p.transaction_date,
+              'paypal' AS source
+            FROM paypal_transactions AS p
+            LEFT JOIN quickbooks_ledger AS q
+              ON q.source_transaction_id = p.transaction_id
+            WHERE q.source_transaction_id IS NULL
+            LIMIT 100
+          max_rows: 100
+
+      - step: find_gross_amount_mismatches
+        action: run_sql
+        inputs:
+          files:
+            stripe_transactions: arn:apilabs:file:2e0b71e8-37b3-43a3-8077-7f284d8c6da7
+            paypal_transactions: arn:apilabs:file:15744b35-ed84-496f-8e85-626926b45df9
+            quickbooks_ledger: arn:apilabs:file:f37ee6df-9478-40f8-8257-84417a81adb6
+          sql: |
+            SELECT
+              t.order_id,
+              t.transaction_id,
+              t.gross_amount AS source_gross_amount,
+              q.gross_amount AS quickbooks_gross_amount,
+              t.currency,
+              t.status,
+              t.transaction_date
+            FROM stripe_transactions AS t
+            JOIN quickbooks_ledger AS q
+              ON t.order_id = q.order_id
+            WHERE CAST(t.gross_amount AS DOUBLE) <> CAST(q.gross_amount AS DOUBLE)
+            UNION ALL
+            SELECT
+              p.order_id,
+              p.transaction_id,
+              p.gross_amount AS source_gross_amount,
+              q.gross_amount AS quickbooks_gross_amount,
+              p.currency,
+              p.status,
+              p.transaction_date
+            FROM paypal_transactions AS p
+            JOIN quickbooks_ledger AS q
+              ON p.order_id = q.order_id
+            WHERE CAST(p.gross_amount AS DOUBLE) <> CAST(q.gross_amount AS DOUBLE)
+            LIMIT 100
+          max_rows: 100
+
+      - step: find_payment_value_mismatches
+        action: run_sql
+        inputs:
+          files:
+            stripe_transactions: arn:apilabs:file:2e0b71e8-37b3-43a3-8077-7f284d8c6da7
+            paypal_transactions: arn:apilabs:file:15744b35-ed84-496f-8e85-626926b45df9
+            quickbooks_ledger: arn:apilabs:file:f37ee6df-9478-40f8-8257-84417a81adb6
+          sql: |
+            SELECT
+              COALESCE(s.order_id, p.order_id) AS order_id,
+              COALESCE(s.transaction_id, p.transaction_id) AS payment_transaction_id,
+              COALESCE(s.currency, p.currency) AS currency,
+              s.gross_amount AS stripe_gross_amount,
+              q.gross_amount AS quickbooks_gross_amount,
+              p.gross_amount AS paypal_gross_amount,
+              s.fee_amount AS stripe_fee_amount,
+              q.fee_amount AS quickbooks_fee_amount,
+              p.fee_amount AS paypal_fee_amount,
+              s.net_amount AS stripe_net_amount,
+              q.net_amount AS quickbooks_net_amount,
+              p.net_amount AS paypal_net_amount,
+              s.status AS stripe_status,
+              q.status AS quickbooks_status,
+              p.status AS paypal_status
+            FROM stripe_transactions AS s
+            LEFT JOIN quickbooks_ledger AS q
+              ON s.order_id = q.order_id
+            LEFT JOIN paypal_transactions AS p
+              ON s.order_id = p.order_id
+            WHERE q.order_id IS NULL
+               OR p.order_id IS NOT NULL
+               OR s.gross_amount <> q.gross_amount
+               OR s.fee_amount <> q.fee_amount
+               OR s.net_amount <> q.net_amount
+               OR s.status <> q.status
+               OR (
+                 p.order_id IS NOT NULL
+                 AND (
+                   p.gross_amount <> q.gross_amount
+                   OR p.fee_amount <> q.fee_amount
+                   OR p.net_amount <> q.net_amount
+                   OR p.status <> q.status
+                 )
+               )
+            LIMIT 100
+          max_rows: 100
+
+      - step: find_duplicate_quickbooks_transactions
+        action: run_sql
+        inputs:
+          files:
+            quickbooks_ledger: arn:apilabs:file:f37ee6df-9478-40f8-8257-84417a81adb6
+          sql: |
+            SELECT
+              source,
+              source_transaction_id,
+              COUNT(*) AS quickbooks_record_count
+            FROM quickbooks_ledger
+            WHERE source IN ('stripe', 'paypal')
+            GROUP BY source, source_transaction_id
+            HAVING COUNT(*) > 1
+            ORDER BY quickbooks_record_count DESC, source, source_transaction_id
+            LIMIT 100
+          max_rows: 100
+
+      - step: find_unknown_quickbooks_transactions
+        action: run_sql
+        inputs:
+          files:
+            quickbooks_ledger: arn:apilabs:file:f37ee6df-9478-40f8-8257-84417a81adb6
+          sql: |
+            SELECT
+              ledger_entry_id,
+              source,
+              source_transaction_id,
+              order_id,
+              gross_amount,
+              fee_amount,
+              net_amount,
+              currency,
+              status,
+              posted_date
+            FROM quickbooks_ledger
+            WHERE source NOT IN ('stripe', 'paypal')
+            LIMIT 100
+          max_rows: 100
+
+tests:
+  stripe_paypal_quickbooks_reconciliation:
+    execute: stripe_paypal_quickbooks_reconciliation
+    expect:
+      find_transactions_missing_from_quickbooks: 200
+      find_gross_amount_mismatches: 200
+      find_payment_value_mismatches: 200
+      find_duplicate_quickbooks_transactions: 200
+      find_unknown_quickbooks_transactions: 200
