@@ -1,0 +1,28 @@
+contract:
+  watermark: apilabs
+  version: "1.0"
+
+flows:
+  sales_summary:
+    description: Query an authorized Explorer file with DuckDB.
+    steps:
+      - step: summarize_sales
+        action: run_sql
+        inputs:
+          files:
+            sales: arn:apilabs:file:28f2b7ed-9e02-4eaf-a5c0-3dc635a2b0f4
+          sql: |
+            SELECT
+              region,
+              COUNT(*) AS orders,
+              SUM(amount) AS total_amount
+            FROM sales
+            GROUP BY region
+            ORDER BY total_amount DESC
+          max_rows: 100
+
+tests:
+  sales_analytics:
+    execute: sales_summary
+    expect:
+      summarize_sales: 200
