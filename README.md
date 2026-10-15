@@ -31,6 +31,28 @@ API, MCP tool, or SaaS provider
 
 The agent requests an action. SuperContracts evaluates the applicable policy before the action reaches the connected system.
 
+## Connect to SuperContracts
+
+### Hosted MCP — Recommended
+
+Connect directly to the API Labs hosted MCP service. No download or local server process is required.
+
+```text
+https://mcp.apilabs.ai/mcp
+```
+
+[Set up Hosted MCP](./quick_start/connect-your-ai-agent.md#hosted-mcp--recommended)
+
+### Local MCP — Optional
+
+Run the SuperContracts MCP bridge on your computer for private-network access, local development, restricted environments, or customer-controlled execution.
+
+```text
+http://127.0.0.1:8080/mcp
+```
+
+[Set up Local MCP](./quick_start/connect-your-ai-agent.md#local-mcp--optional)
+
 ## Documentation
 
 ### 🚀 Quick Start
@@ -85,7 +107,7 @@ Compose guarded workflows across APIs and MCP providers without embedding provid
 | Area | Tools | Purpose |
 | --- | --- | --- |
 | Contracts | `list_contracts`, `get_contract`, `save_contract` | Discover, load, and store contract YAML |
-| Execution | `run_contract`, `get_run`, `list_test_runs` | Run tests/workflows and inspect evidence |
+| Execution | `run_contract`, `validate_action`, `get_run`, `list_test_runs` | Validate without HTTP side effects, run tests/workflows, and inspect evidence |
 | Resources | `resolve_resource` | Resolve API Labs resource metadata without exposing secret values |
 | Guardrails | `list_guarded_tools`, `validate_guarded`, `invoke_guarded` | Inspect policy, validate without side effects, or execute after evaluation |
 | Skills | `resolve_skill`, `list_skills`, `get_skill`, `list_skill_tools`, `run_skill` | Discover and run reusable provider policies by intent |
@@ -126,21 +148,34 @@ When a saved API contract is run with its `connection_id`, artifacts can include
 | [`supercontracts/`](./supercontracts/) | Developer guide, guarded-service contracts, approvals, and workflow examples |
 | [`skills/`](./skills/) | Reusable GitHub, Stripe, and Supabase Skill Register policies |
 | [`api-testing-supercontracts/`](./api-testing-supercontracts/) | Provider-focused API test suites |
-| [`mcp_downloads/`](./mcp_downloads/) | Local MCP bridge downloads and Cursor setup guide |
+| [`mcp_downloads/`](./mcp_downloads/) | Optional local MCP bridge downloads and setup guide |
 | [`apilabs-supercontracts-spec.yml`](./apilabs-supercontracts-spec.yml) | SuperContracts specification |
 | [`supercontracts-expression-grammar.md`](./supercontracts-expression-grammar.md) | Expression grammar reference |
 
 ## Troubleshooting
 
+### Hosted MCP
+
+| Symptom | Check |
+| --- | --- |
+| Client cannot connect | Confirm the URL is `https://mcp.apilabs.ai/mcp` and the transport is HTTP |
+| `401`, `403`, or `Missing or malformed JWT` | Confirm the MCP token is active and sent as `Authorization: Bearer <token>` |
+| Client shows connected but calls fail | Generate a new token if the previous token expired or was revoked |
+| Client shows connected but no tools | Reload/reconnect, inspect the tool list, and make a safe read-only call such as `list_contracts` |
+| Old configuration remains active | Remove duplicate global/project `supercontracts` entries and reload the client |
+
+### Local MCP
+
 | Symptom | Check |
 | --- | --- |
 | Client cannot connect | Start the local bridge and confirm `curl http://127.0.0.1:8080/health` succeeds |
 | Port `8080` is already in use | Check `/health` first; an existing SuperContracts bridge may already be running |
-| `401`, `403`, or `Missing or malformed JWT` | Confirm the MCP token is present, unexpired, and sent as `Authorization: Bearer <token>` |
-| Client shows connected but no tools | Reload/reconnect the client, inspect the tool list, and make a safe read-only call such as `list_contracts` |
-| Provider action cannot authenticate | Configure that provider separately in Auth Vault; the MCP token does not authenticate GitHub, Stripe, or other providers |
+| Wrong backend | Release binaries use `https://app.apilabs.ai`; source runs can override `APILABS_BASE_URL` |
+| Tools are missing | Restart the local bridge, reload/reconnect the client, and inspect the tool list |
 
-See the [full MCP installation guide](./mcp_downloads/install_mcp_help.md) for local setup details.
+For either connection mode, configure provider credentials separately in Auth Vault. The MCP token does not authenticate GitHub, Gmail, Stripe, or other providers.
+
+See the [optional local MCP installation guide](./mcp_downloads/install_mcp_help.md) for local setup details.
 
 ## Demo
 

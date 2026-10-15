@@ -10,13 +10,17 @@ Start with a read-only contract. Each example makes one safe provider request an
 
 Use the GitHub example for the first demo because it has no date input and returns a short, recognizable result.
 
+The contract workflow is identical through hosted and local MCP connections. Only the MCP URL—and whether a local server process is required—changes.
+
 **[Watch the complete Cursor Quick Start video](https://drive.google.com/file/d/1zqJGDPoM3w9FN-yXL2a4E6o6apey8kgU/view?usp=sharing)**
 
-The video shows the SuperContracts MCP connection, contract discovery, `get_contract`, and a successful `run_contract` execution of the GitHub example.
+The video shows the optional local SuperContracts MCP connection, contract discovery, `get_contract`, and a successful `run_contract` execution of the GitHub example. Hosted MCP exposes the same tools and contract workflow.
 
 ## 1. Confirm the MCP connection
 
 Open Cursor's MCP settings and confirm that the `supercontracts` server shows **Connected**.
+
+The screenshots below show the optional local connection. If you use hosted MCP, Cursor should instead show `https://mcp.apilabs.ai/mcp` for the same server.
 
 <p align="center">
   <img src="../images/quick_start/quick_start_01_mcp_connected.png" alt="Cursor showing the SuperContracts MCP server connected in the local environment" width="560">

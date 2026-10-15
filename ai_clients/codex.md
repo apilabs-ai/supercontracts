@@ -1,8 +1,22 @@
 # Codex
 
-## Configure SuperContracts MCP
+Codex CLI and the Codex IDE extension share MCP configuration.
 
-In one terminal, export the MCP token. In the project terminal, register and verify the server:
+## Hosted MCP — Recommended
+
+Export the token in your terminal, then register and verify the hosted server:
+
+```bash
+export APILABS_MCP_TOKEN="<YOUR_API_LABS_MCP_TOKEN>"
+codex mcp add supercontracts \
+  --url https://mcp.apilabs.ai/mcp \
+  --bearer-token-env-var APILABS_MCP_TOKEN
+codex mcp list
+```
+
+## Local MCP — Optional
+
+Download, unzip, and start the local SuperContracts MCP release. Confirm `http://127.0.0.1:8080/health` is healthy, then run:
 
 ```bash
 export APILABS_MCP_TOKEN="<YOUR_API_LABS_MCP_TOKEN>"
@@ -11,8 +25,6 @@ codex mcp add supercontracts \
   --bearer-token-env-var APILABS_MCP_TOKEN
 codex mcp list
 ```
-
-Codex CLI and the Codex IDE extension share MCP configuration.
 
 ## Verify installation
 

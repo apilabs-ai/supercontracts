@@ -113,21 +113,26 @@ Secrets stay in the vault; the YAML only holds the ARN reference.
 
 ### 2. Connect MCP in Cursor
 
-Add to `.cursor/mcp.json`:
+For the recommended hosted connection, add this to `.cursor/mcp.json`:
 
 ```json
 {
   "mcpServers": {
     "supercontracts": {
-      "url": "http://127.0.0.1:8080/mcp"
+      "url": "https://mcp.apilabs.ai/mcp",
+      "headers": {
+        "Authorization": "Bearer <YOUR_API_LABS_MCP_TOKEN>"
+      }
     }
   }
 }
 ```
 
-Download and start the SuperContracts MCP server from **MCP Downloads** on apilabs.ai. A green indicator in Cursor means tools are discovered.
+No download or local server process is required for hosted MCP. Reload Cursor and confirm that the server is connected and its tool list is populated.
 
-Full setup: [`mcp_downloads/install_mcp_help.md`](../mcp_downloads/install_mcp_help.md)
+For private-network, local-development, or customer-controlled execution, download and start the optional local bridge and change the URL to `http://127.0.0.1:8080/mcp`.
+
+Full setup: [Connect your AI Agent](../quick_start/connect-your-ai-agent.md) · [Cursor guide](../ai_clients/cursor.md) · [Optional local installation](../mcp_downloads/install_mcp_help.md)
 
 ### 3. Run a Contract
 

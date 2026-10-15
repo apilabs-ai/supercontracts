@@ -2,6 +2,8 @@
 
 Go from a new installation to a protected AI-agent action.
 
+Use the hosted SuperContracts MCP service for the fastest setup. The optional local bridge remains available for private-network, local-development, and customer-controlled environments.
+
 1. [What are SuperContracts?](./what-are-supercontracts.md)
 2. [Connect your AI Agent](./connect-your-ai-agent.md)
 3. [Authenticate](./authenticate.md)
