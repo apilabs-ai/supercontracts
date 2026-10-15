@@ -7,12 +7,15 @@ Connect SuperContracts to your preferred AI coding client:
 - [Codex](./codex.md)
 - [VS Code / GitHub Copilot](./vscode-github-copilot.md)
 
-All clients connect to the local SuperContracts Streamable HTTP endpoint:
+## Connection options
 
-```text
-http://127.0.0.1:8080/mcp
-```
+| Mode | MCP endpoint | Use when |
+| --- | --- | --- |
+| **Hosted — Recommended** | `https://mcp.apilabs.ai/mcp` | You want the fastest setup with no local process |
+| **Local — Optional** | `http://127.0.0.1:8080/mcp` | You need private-network, local-development, or customer-controlled execution |
 
-Before configuring a client, complete [Connect your AI Agent](../quick_start/connect-your-ai-agent.md) and [Authenticate](../quick_start/authenticate.md).
+Both modes require an MCP token from **API Labs → Auth Vault → MCP Access Tokens**. Provider credentials are configured separately.
+
+Before configuring a client, read [Connect your AI Agent](../quick_start/connect-your-ai-agent.md) and [Authenticate](../quick_start/authenticate.md).
 
 [Back to SuperContracts](../README.md)

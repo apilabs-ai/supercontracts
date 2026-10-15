@@ -1,6 +1,14 @@
-# Configure SuperContracts MCP in Cursor
+# Optional Local SuperContracts MCP Setup for Cursor
 
-This guide walks you through configuring the **SuperContracts MCP Server** in Cursor.
+Most users should connect directly to the hosted SuperContracts MCP service and do not need to download or run a local server:
+
+```text
+https://mcp.apilabs.ai/mcp
+```
+
+See the [Cursor client guide](../ai_clients/cursor.md#hosted-mcp--recommended) for the recommended hosted configuration.
+
+Use this guide when you specifically need the **local SuperContracts MCP bridge** for private-network access, local development, restricted environments, or customer-controlled execution.
 
 ---
 
@@ -42,7 +50,7 @@ This provides a secure public URL for local development.
 
 ---
 
-## 3. Configure Cursor
+## 3. Configure Cursor for Local MCP
 
 Open:
 
@@ -58,7 +66,7 @@ Click **Add MCP Server**, **or** create the following project configuration file
 
 ---
 
-## 4. Install the SuperContracts MCP Server
+## 4. Install the Local SuperContracts MCP Server
 
 From **apilabs.ai**, navigate to:
 
@@ -70,7 +78,7 @@ Download and start the **SuperContracts MCP Server**.
 
 ---
 
-## 5. Configure the MCP Server
+## 5. Configure the Local MCP Server
 
 Add the following configuration to `.cursor/mcp.json`:
 
@@ -78,7 +86,10 @@ Add the following configuration to `.cursor/mcp.json`:
 {
   "mcpServers": {
     "supercontracts": {
-      "url": "http://127.0.0.1:8080/mcp"
+      "url": "http://127.0.0.1:8080/mcp",
+      "headers": {
+        "Authorization": "Bearer <YOUR_API_LABS_MCP_TOKEN>"
+      }
     }
   }
 }
@@ -92,7 +103,7 @@ Start the SuperContracts MCP Server.
 
 Once running, Cursor automatically discovers the available MCP tools.
 
-✅ A **green status indicator** in Cursor confirms that the MCP server is connected and the tools have been successfully discovered.
+✅ A **green status indicator** confirms the connection. Also open the server configuration and verify that the tool list is populated; connection status alone is not sufficient verification.
 
 ---
 

@@ -1,15 +1,26 @@
 # Claude Code
 
-## Configure SuperContracts MCP
+## Hosted MCP — Recommended
 
 Run from the project where you use Claude Code:
 
 ```bash
-claude mcp add --transport http supercontracts http://127.0.0.1:8080/mcp
+claude mcp add --transport http supercontracts https://mcp.apilabs.ai/mcp \
+  --header "Authorization: Bearer <YOUR_API_LABS_MCP_TOKEN>"
 claude mcp list
 ```
 
-Add the MCP bearer token through your supported Claude Code authentication/header configuration. Do not place a real token in a committed project file.
+## Local MCP — Optional
+
+Download, unzip, and start the local SuperContracts MCP release. Confirm `http://127.0.0.1:8080/health` is healthy, then run:
+
+```bash
+claude mcp add --transport http supercontracts http://127.0.0.1:8080/mcp \
+  --header "Authorization: Bearer <YOUR_API_LABS_MCP_TOKEN>"
+claude mcp list
+```
+
+Do not place a live token in a committed project configuration. Claude Code also supports environment-variable expansion in `.mcp.json` headers when you want to keep the token outside the file.
 
 ## Verify installation
 
