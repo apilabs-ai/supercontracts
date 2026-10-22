@@ -1,4 +1,4 @@
-# Runtime-compatible API Labs contract for MCP v1.2.3.
+# Runtime-compatible apilabs-ai contract for MCP v1.2.3.
 contract:
   format: apilabs.ai
   version: "1.0"

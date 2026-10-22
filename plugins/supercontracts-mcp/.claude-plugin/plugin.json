@@ -1,0 +1,20 @@
+{
+  "name": "supercontracts-mcp",
+  "version": "0.1.0",
+  "description": "Run guarded API and MCP workflows with SuperContracts.",
+  "author": {
+    "name": "API Labs"
+  },
+  "homepage": "https://github.com/apilabs-ai/supercontracts",
+  "repository": "https://github.com/apilabs-ai/supercontracts",
+  "license": "Apache-2.0",
+  "userConfig": {
+    "api_token": {
+      "type": "string",
+      "title": "API Labs MCP token",
+      "description": "Create a personal token in API Labs Auth Vault. It is stored in secure credential storage.",
+      "required": true,
+      "sensitive": true
+    }
+  }
+}

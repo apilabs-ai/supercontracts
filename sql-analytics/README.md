@@ -1,6 +1,6 @@
 # DuckDB SQL analytics
 
-This example runs a read-only DuckDB query over a CSV, JSON, or Parquet file already stored in ApiLabs Explorer.
+This example runs a read-only DuckDB query over a CSV, JSON, or Parquet file already stored in apilabs-ai Explorer.
 
 1. Replace `CHANGE_ME_EXPLORER_FILE_ARN` with the data file ARN from Explorer.
 2. Save the YAML as a SuperContract.

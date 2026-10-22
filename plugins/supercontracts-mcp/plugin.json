@@ -1,0 +1,14 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "supercontracts-mcp",
+  "version": "0.1.0",
+  "description": "Guarded API and MCP workflows through the apilabs-ai SuperContracts service.",
+  "author": {
+    "name": "apilabs-ai",
+    "url": "https://apilabs.ai"
+  },
+  "homepage": "https://github.com/apilabs-ai/supercontracts",
+  "repository": "https://github.com/apilabs-ai/supercontracts",
+  "license": "Apache-2.0",
+  "keywords": ["mcp", "api-testing", "guardrails", "workflows"]
+}

@@ -9,8 +9,8 @@ SuperContracts supports two connection modes. The hosted MCP service is recommen
 | Download required | No | Yes |
 | Local process required | No | Yes |
 | MCP token required | Yes | Yes |
-| Provider credentials | API Labs Auth Vault | API Labs Auth Vault |
-| Updates | Managed by API Labs | Download new releases when needed |
+| Provider credentials | apilabs-ai Auth Vault | apilabs-ai Auth Vault |
+| Updates | Managed by apilabs-ai | Download new releases when needed |
 
 ## Hosted MCP — Recommended
 
@@ -48,7 +48,7 @@ http://127.0.0.1:8080/mcp
 
 6. Reload or reconnect the client, confirm the tool list is populated, and make a safe read-only call such as `list_contracts`.
 
-Release binaries use `https://app.apilabs.ai` as the API Labs backend. Developers running the bridge from source can override `APILABS_BASE_URL` when working against another backend.
+Release binaries use `https://app.apilabs.ai` as the apilabs-ai backend. Developers running the bridge from source can override `APILABS_BASE_URL` when working against another backend.
 
 Choose your client for exact hosted and local configuration:
 

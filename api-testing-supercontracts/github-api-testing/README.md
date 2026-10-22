@@ -34,7 +34,7 @@ github-api-testing/
 
 ## Authentication
 
-Store a GitHub token in the API Labs Auth Vault and replace the placeholder `auth.secret_arn` in `github-api-testing.yml`. The token needs read access to the authenticated user and their repositories. Never commit the token itself.
+Store a GitHub token in the apilabs-ai Auth Vault and replace the placeholder `auth.secret_arn` in `github-api-testing.yml`. The token needs read access to the authenticated user and their repositories. Never commit the token itself.
 
 ---
 

@@ -14,7 +14,7 @@ Connect SuperContracts to your preferred AI coding client:
 | **Hosted — Recommended** | `https://mcp.apilabs.ai/mcp` | You want the fastest setup with no local process |
 | **Local — Optional** | `http://127.0.0.1:8080/mcp` | You need private-network, local-development, or customer-controlled execution |
 
-Both modes require an MCP token from **API Labs → Auth Vault → MCP Access Tokens**. Provider credentials are configured separately.
+Both modes require an MCP token from **apilabs-ai → Auth Vault → MCP Access Tokens**. Provider credentials are configured separately.
 
 Before configuring a client, read [Connect your AI Agent](../quick_start/connect-your-ai-agent.md) and [Authenticate](../quick_start/authenticate.md).
 

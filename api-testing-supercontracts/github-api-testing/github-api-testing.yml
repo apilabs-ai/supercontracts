@@ -1,5 +1,5 @@
 # Five GitHub videos: two intentional passes and three intentional failures.
-# Store the GitHub token in API Labs Auth Vault. Never place it in this file.
+# Store the GitHub token in apilabs-ai Auth Vault. Never place it in this file.
 auto_skills: false
 contract:
   watermark: "supercontracts-github-api-testing"

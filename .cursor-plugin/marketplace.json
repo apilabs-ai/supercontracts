@@ -1,0 +1,19 @@
+{
+  "name": "apilabs-supercontracts",
+  "owner": {
+    "name": "apilabs-ai"
+  },
+  "metadata": {
+    "description": "API Labs SuperContracts plugins for guarded API and MCP workflows."
+  },
+  "plugins": [
+    {
+      "name": "supercontracts-mcp",
+      "source": "plugins/supercontracts-mcp",
+      "description": "Run guarded API and MCP workflows with SuperContracts.",
+      "version": "0.1.0",
+      "license": "Apache-2.0",
+      "category": "Developer Tools"
+    }
+  ]
+}

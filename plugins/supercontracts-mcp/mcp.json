@@ -1,0 +1,12 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "supercontracts": {
+      "type": "streamable-http",
+      "url": "https://mcp.apilabs.ai/mcp",
+      "headers": {
+        "Authorization": "Bearer ${APILABS_MCP_TOKEN}"
+      }
+    }
+  }
+}
