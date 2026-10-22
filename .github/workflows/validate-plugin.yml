@@ -1,0 +1,50 @@
+name: Validate SuperContracts Plugin
+
+on:
+  pull_request:
+    paths:
+      - "plugins/supercontracts-mcp/**"
+      - ".cursor-plugin/marketplace.json"
+      - ".claude-plugin/marketplace.json"
+      - ".github/workflows/validate-plugin.yml"
+  push:
+    branches: [main]
+    paths:
+      - "plugins/supercontracts-mcp/**"
+      - ".cursor-plugin/marketplace.json"
+      - ".claude-plugin/marketplace.json"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate JSON manifests
+        run: |
+          jq empty \
+            plugins/supercontracts-mcp/plugin.json \
+            plugins/supercontracts-mcp/mcp.json \
+            plugins/supercontracts-mcp/.cursor-plugin/plugin.json \
+            plugins/supercontracts-mcp/.claude-plugin/plugin.json \
+            plugins/supercontracts-mcp/.mcp.json \
+            .cursor-plugin/marketplace.json \
+            .claude-plugin/marketplace.json
+      - name: Validate package paths and skill front matter
+        run: |
+          test -f plugins/supercontracts-mcp/plugin.json
+          test -f plugins/supercontracts-mcp/mcp.json
+          test -f plugins/supercontracts-mcp/.cursor-plugin/plugin.json
+          test -f plugins/supercontracts-mcp/.claude-plugin/plugin.json
+          test -f plugins/supercontracts-mcp/.mcp.json
+          for skill in plugins/supercontracts-mcp/skills/*/SKILL.md; do
+            test -f "$skill"
+            head -n 1 "$skill" | grep -Fx -- '---'
+            sed -n '2,12p' "$skill" | grep -Eq '^name: [a-z0-9-]+$'
+            sed -n '2,12p' "$skill" | grep -Eq '^description: .+$'
+          done
+      - name: Reject secret-like values in public package
+        run: |
+          ! rg -n -i '(apl_[a-z0-9_]{12,}|authorization:[[:space:]]*bearer[[:space:]]+[a-z0-9._-]{12,}|client_secret)' plugins/supercontracts-mcp

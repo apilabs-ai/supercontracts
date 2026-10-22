@@ -35,7 +35,7 @@ The agent requests an action. SuperContracts evaluates the applicable policy bef
 
 ### Hosted MCP — Recommended
 
-Connect directly to the API Labs hosted MCP service. No download or local server process is required.
+Connect directly to the apilabs-ai hosted MCP service. No download or local server process is required.
 
 ```text
 https://mcp.apilabs.ai/mcp
@@ -68,6 +68,14 @@ http://127.0.0.1:8080/mcp
 - [Claude Code](./ai_clients/claude-code.md)
 - [Codex](./ai_clients/codex.md)
 - [VS Code / GitHub Copilot](./ai_clients/vscode-github-copilot.md)
+
+### 📦 Plugin package
+
+The portable marketplace package lives in
+[`plugins/supercontracts-mcp/`](./plugins/supercontracts-mcp/). It contains
+client configuration and reusable workflow skills only; the hosted MCP service,
+authorization, approvals, and provider credentials remain outside this public
+package.
 
 Start with the [Quick Start overview](./quick_start/). It takes you from installation to a protected, read-only GitHub action and includes screenshots plus a complete Cursor video.
 
@@ -108,7 +116,7 @@ Compose guarded workflows across APIs and MCP providers without embedding provid
 | --- | --- | --- |
 | Contracts | `list_contracts`, `get_contract`, `save_contract` | Discover, load, and store contract YAML |
 | Execution | `run_contract`, `validate_action`, `get_run`, `list_test_runs` | Validate without HTTP side effects, run tests/workflows, and inspect evidence |
-| Resources | `resolve_resource` | Resolve API Labs resource metadata without exposing secret values |
+| Resources | `resolve_resource` | Resolve apilabs-ai resource metadata without exposing secret values |
 | Guardrails | `list_guarded_tools`, `validate_guarded`, `invoke_guarded` | Inspect policy, validate without side effects, or execute after evaluation |
 | Skills | `resolve_skill`, `list_skills`, `get_skill`, `list_skill_tools`, `run_skill` | Discover and run reusable provider policies by intent |
 | Approvals | `request_approval`, `get_approval_status`, `decide_approval` | Create, inspect, and decide approval requests |
@@ -147,6 +155,7 @@ When a saved API contract is run with its `connection_id`, artifacts can include
 | [`ai_clients/`](./ai_clients/) | Cursor, Claude Code, Codex, and VS Code / GitHub Copilot setup |
 | [`supercontracts/`](./supercontracts/) | Developer guide, guarded-service contracts, approvals, and workflow examples |
 | [`skills/`](./skills/) | Reusable GitHub, Stripe, and Supabase Skill Register policies |
+| [`plugins/supercontracts-mcp/`](./plugins/supercontracts-mcp/) | Portable MCP plugin and reusable client workflow skills |
 | [`api-testing-supercontracts/`](./api-testing-supercontracts/) | Provider-focused API test suites |
 | [`mcp_downloads/`](./mcp_downloads/) | Optional local MCP bridge downloads and setup guide |
 | [`apilabs-supercontracts-spec.yml`](./apilabs-supercontracts-spec.yml) | SuperContracts specification |

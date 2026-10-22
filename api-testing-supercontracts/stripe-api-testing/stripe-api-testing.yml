@@ -1,5 +1,5 @@
 # Five Stripe videos: three intentional passes and two intentional failures.
-# Store a Stripe TEST MODE key in API Labs Auth Vault. Never place it in this file.
+# Store a Stripe TEST MODE key in apilabs-ai Auth Vault. Never place it in this file.
 auto_skills: false
 contract:
   watermark: "supercontracts-stripe-api-testing"

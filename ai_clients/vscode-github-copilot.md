@@ -19,7 +19,7 @@ Create `.vscode/mcp.json` in your project:
     {
       "id": "apilabs-mcp-token",
       "type": "promptString",
-      "description": "API Labs MCP token",
+      "description": "apilabs-ai MCP token",
       "password": true
     }
   ]

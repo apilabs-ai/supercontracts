@@ -34,7 +34,7 @@ stripe-api-testing/
 
 ## Authentication
 
-Store a Stripe **test-mode** secret key in the API Labs Auth Vault and replace the placeholder `auth.secret_arn` in `stripe-api-testing.yml`. Never use a live-mode key or commit the secret itself.
+Store a Stripe **test-mode** secret key in the apilabs-ai Auth Vault and replace the placeholder `auth.secret_arn` in `stripe-api-testing.yml`. Never use a live-mode key or commit the secret itself.
 
 ---
 

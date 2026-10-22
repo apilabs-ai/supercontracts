@@ -1,6 +1,6 @@
 # Ten controlled Supabase videos: five expected passes and five intentional failures.
 # Use a disposable Supabase project/table created with SUPABASE_VIDEO_SETUP.sql.
-# Keep the anon key in API Labs Auth Vault; never paste it into this file.
+# Keep the anon key in apilabs-ai Auth Vault; never paste it into this file.
 auto_skills: false
 contract:
   watermark: "supercontracts-supabase-api-testing"
