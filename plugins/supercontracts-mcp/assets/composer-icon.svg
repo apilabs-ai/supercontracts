@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-labelledby="title">
+  <title id="title">SuperContracts</title>
+  <rect width="256" height="256" rx="56" fill="#111820"/>
+  <circle cx="128" cy="120" r="76" fill="none" stroke="#ffffff" stroke-width="16" stroke-dasharray="96 24"/>
+  <path d="M153 27 71 132h47l-21 101 87-122h-50z" fill="#F20D19"/>
+</svg>

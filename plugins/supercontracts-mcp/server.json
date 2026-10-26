@@ -1,0 +1,25 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.apilabs-ai/supercontracts",
+  "title": "apilabs-ai SuperContracts",
+  "description": "Guarded API and MCP workflows with policies, approvals, and execution evidence.",
+  "repository": {
+    "url": "https://github.com/apilabs-ai/supercontracts",
+    "source": "github"
+  },
+  "version": "0.2.0",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.apilabs.ai/mcp",
+      "headers": [
+        {
+          "name": "Authorization",
+          "description": "Personal apilabs-ai MCP token. Enter Bearer followed by the token.",
+          "isRequired": true,
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}
