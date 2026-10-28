@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "plugins/supercontracts-mcp/**"
+      - "scripts/build-codex-package.sh"
       - ".cursor-plugin/marketplace.json"
       - ".claude-plugin/marketplace.json"
       - ".github/workflows/validate-plugin.yml"
@@ -11,6 +12,7 @@ on:
     branches: [main]
     paths:
       - "plugins/supercontracts-mcp/**"
+      - "scripts/build-codex-package.sh"
       - ".cursor-plugin/marketplace.json"
       - ".claude-plugin/marketplace.json"
 
@@ -27,6 +29,8 @@ jobs:
           jq empty \
             plugins/supercontracts-mcp/plugin.json \
             plugins/supercontracts-mcp/mcp.json \
+            plugins/supercontracts-mcp/server.json \
+            plugins/supercontracts-mcp/.vscode/mcp.json \
             plugins/supercontracts-mcp/.cursor-plugin/plugin.json \
             plugins/supercontracts-mcp/.claude-plugin/plugin.json \
             plugins/supercontracts-mcp/.mcp.json \
@@ -36,6 +40,10 @@ jobs:
         run: |
           test -f plugins/supercontracts-mcp/plugin.json
           test -f plugins/supercontracts-mcp/mcp.json
+          test -f plugins/supercontracts-mcp/server.json
+          test -f plugins/supercontracts-mcp/.vscode/mcp.json
+          test -f plugins/supercontracts-mcp/assets/logo.svg
+          test -f plugins/supercontracts-mcp/assets/composer-icon.svg
           test -f plugins/supercontracts-mcp/.cursor-plugin/plugin.json
           test -f plugins/supercontracts-mcp/.claude-plugin/plugin.json
           test -f plugins/supercontracts-mcp/.mcp.json
@@ -45,6 +53,49 @@ jobs:
             sed -n '2,12p' "$skill" | grep -Eq '^name: [a-z0-9-]+$'
             sed -n '2,12p' "$skill" | grep -Eq '^description: .+$'
           done
+      - name: Validate OpenAI submission metadata
+        run: |
+          jq -e '.extensions["com.openai"].interface.logo == "./assets/logo.svg"' plugins/supercontracts-mcp/plugin.json
+          jq -e '.extensions["com.openai"].interface.composerIcon == "./assets/composer-icon.svg"' plugins/supercontracts-mcp/plugin.json
+          jq -e '.extensions["com.openai"].review.test_cases.positive | length == 5' plugins/supercontracts-mcp/plugin.json
+          jq -e '.extensions["com.openai"].review.test_cases.negative | length == 3' plugins/supercontracts-mcp/plugin.json
+          jq -e '.extensions["com.openai"].interface.defaultPrompt | length <= 3' plugins/supercontracts-mcp/plugin.json
+          jq -e '.mcpServers | length == 1' plugins/supercontracts-mcp/mcp.json
+      - name: Validate MCP Registry and VS Code metadata
+        run: |
+          jq -e '
+            .name == "io.github.apilabs-ai/supercontracts" and
+            .title == "apilabs-ai SuperContracts" and
+            (.description | length <= 100) and
+            .version == "0.2.0" and
+            .repository == {"url":"https://github.com/apilabs-ai/supercontracts","source":"github"} and
+            .remotes == [{
+              "type":"streamable-http",
+              "url":"https://mcp.apilabs.ai/mcp",
+              "headers":[{
+                "name":"Authorization",
+                "description":"Personal apilabs-ai MCP token. Enter Bearer followed by the token.",
+                "isRequired":true,
+                "isSecret":true
+              }]
+            }]
+          ' plugins/supercontracts-mcp/server.json
+          jq -e '
+            .servers.supercontracts.type == "http" and
+            .servers.supercontracts.url == "https://mcp.apilabs.ai/mcp" and
+            .servers.supercontracts.headers.Authorization == "Bearer ${input:apilabs-mcp-token}" and
+            .inputs == [{
+              "type":"promptString",
+              "id":"apilabs-mcp-token",
+              "description":"apilabs-ai personal MCP token",
+              "password":true
+            }]
+          ' plugins/supercontracts-mcp/.vscode/mcp.json
+      - name: Build and inspect Codex package
+        run: |
+          ./scripts/build-codex-package.sh
+          unzip -p dist/supercontracts-codex.zip mcp.json | jq -e '.mcpServers.supercontracts.headers == null'
+          unzip -p dist/supercontracts-codex.zip mcp.json | jq -e '.mcpServers.supercontracts.extensions["com.openai"].auth == {"type":"api_key","headerScheme":"bearer"}'
       - name: Reject secret-like values in public package
         run: |
           ! rg -n -i '(apl_[a-z0-9_]{12,}|authorization:[[:space:]]*bearer[[:space:]]+[a-z0-9._-]{12,}|client_secret)' plugins/supercontracts-mcp

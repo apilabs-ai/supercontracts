@@ -1,0 +1,19 @@
+{
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "apilabs-mcp-token",
+      "description": "apilabs-ai personal MCP token",
+      "password": true
+    }
+  ],
+  "servers": {
+    "supercontracts": {
+      "type": "http",
+      "url": "https://mcp.apilabs.ai/mcp",
+      "headers": {
+        "Authorization": "Bearer ${input:apilabs-mcp-token}"
+      }
+    }
+  }
+}
