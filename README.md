@@ -102,6 +102,7 @@ Define routes, chain response data between steps, assert status codes and fields
 - [Stripe API testing](./api-testing-supercontracts/stripe-api-testing/)
 - [Supabase API testing](./api-testing-supercontracts/supabase-api-testing/)
 - [Supabase CRUD workflow](./supercontracts/%20supabase-crud-local-contracts/)
+- [Durable delay and retry workflow](./supercontracts/supercontracts-durable-delay-retry/)
 
 ### SaaS API workflows
 

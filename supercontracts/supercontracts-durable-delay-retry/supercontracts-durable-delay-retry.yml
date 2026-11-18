@@ -1,0 +1,192 @@
+# Replace the placeholders before running. See README.md for setup.
+api:
+  name: "Supabase Todos API"
+  version: "v1"
+  base_url: "https://YOUR_PROJECT_REF.supabase.co"
+  description: "PostgREST todos CRUD — models for run context and AI summary."
+
+auth:
+  type: bearer
+  in: header
+  secret_arn: "arn:apilabs:secret:YOUR_SUPABASE_USER_TOKEN_SECRET_ID"
+
+models:
+  Todo:
+    description: "Single todo row."
+    fields:
+      id: uuid
+      title: string
+      description: string
+      user_id: uuid
+      created_at: datetime
+
+  TodoCreate:
+    description: "Payload for creating a todo."
+    required:
+      - title
+      - user_id
+    fields:
+      title: string
+      description: string
+      user_id: uuid
+
+  TodoUpdate:
+    description: "Payload for updating a todo."
+    fields:
+      title: string
+      description: string
+
+  TodoList:
+    description: "Array of todos returned by PostgREST."
+    type: array
+    items: Todo
+
+  Empty:
+    description: "No response body (204 delete)."
+
+routes:
+  create_todo:
+    description: "Create a todo for authenticated user."
+    method: POST
+    path: /rest/v1/todos
+    headers:
+      apikey: "YOUR_SUPABASE_PUBLISHABLE_KEY"
+      Content-Type: "application/json"
+      Prefer: "return=representation"
+    request:
+      body: TodoCreate
+    response:
+      201: TodoList
+
+  list_todos:
+    description: "List todos for authenticated user."
+    method: GET
+    path: /rest/v1/todos
+    headers:
+      apikey: "YOUR_SUPABASE_PUBLISHABLE_KEY"
+    params:
+      select:
+        type: string
+        in: query
+        required: true
+        description: "Columns to return (* for all)."
+    response:
+      200: TodoList
+
+  get_todo:
+    description: "Get a single todo by PostgREST id filter."
+    method: GET
+    path: /rest/v1/todos
+    headers:
+      apikey: "YOUR_SUPABASE_PUBLISHABLE_KEY"
+    params:
+      id:
+        type: string
+        in: query
+        required: true
+        description: "PostgREST filter, e.g. eq.{uuid}"
+      select:
+        type: string
+        in: query
+        required: true
+    response:
+      200: TodoList
+
+  update_todo:
+    description: "Update a todo by PostgREST id filter."
+    method: PATCH
+    path: /rest/v1/todos
+    headers:
+      apikey: "YOUR_SUPABASE_PUBLISHABLE_KEY"
+      Content-Type: "application/json"
+      Prefer: "return=representation"
+    params:
+      id:
+        type: string
+        in: query
+        required: true
+        description: "PostgREST filter, e.g. eq.{uuid}"
+    request:
+      body: TodoUpdate
+    response:
+      200: TodoList
+
+  delete_todo:
+    description: "Delete a todo by PostgREST id filter."
+    method: DELETE
+    path: /rest/v1/todos
+    headers:
+      apikey: "YOUR_SUPABASE_PUBLISHABLE_KEY"
+    params:
+      id:
+        type: string
+        in: query
+        required: true
+        description: "PostgREST filter, e.g. eq.{uuid}"
+    response:
+      204: Empty
+
+flows:
+  todos_timed_visibility:
+    description: "Create a todo, wait for reads, verify the update, then delete it."
+    steps:
+      - step: create
+        action: create_todo
+        inputs:
+          body:
+            title: "Timed E2E Todo"
+            description: "Created by timed SuperContract"
+            user_id: "YOUR_AUTH_USER_ID"
+
+      - step: get_created
+        action: get_todo
+        inputs:
+          id: "eq.{create.response.body.0.id}"
+          select: "*"
+        wait_before: 15s
+        retry_until:
+          attempts: 5
+          delay: 3s
+          timeout: 30s
+          verify: "get_created.response.body.0.id != null"
+
+      - step: update
+        action: update_todo
+        inputs:
+          id: "eq.{create.response.body.0.id}"
+          body:
+            title: "Updated Timed E2E Todo"
+            description: "Updated by timed SuperContract"
+
+      - step: get_updated
+        action: get_todo
+        inputs:
+          id: "eq.{create.response.body.0.id}"
+          select: "*"
+        wait_before: 15s
+        retry_until:
+          attempts: 5
+          delay: 3s
+          timeout: 30s
+          verify: "get_updated.response.body.0.title == 'Updated Timed E2E Todo'"
+
+      - step: delete
+        action: delete_todo
+        inputs:
+          id: "eq.{create.response.body.0.id}"
+
+tests:
+  todos_timed_visibility:
+    description: "Timed create and update visibility with cleanup."
+    execute: todos_timed_visibility
+    expect:
+      create: 201
+      get_created: 200
+      update: 200
+      get_updated: 200
+      delete: 204
+    verify:
+      - "create.response.body.0.id != null"
+      - "get_created.response.body.0.id != null"
+      - "update.response.body.0.title == 'Updated Timed E2E Todo'"
+      - "get_updated.response.body.0.title == 'Updated Timed E2E Todo'"
