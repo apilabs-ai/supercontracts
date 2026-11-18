@@ -86,6 +86,7 @@ See [`mcp_guardrail_contracts/github_mcp_guardrail.yaml`](./mcp_guardrail_contra
 | Folder | What it demonstrates |
 |---|---|
 | [` supabase-crud-local-contracts/`](./%20supabase-crud-local-contracts/) | Chained CRUD workflow against Supabase PostgREST (create → list → get → update → delete) |
+| [`supercontracts-durable-delay-retry/`](./supercontracts-durable-delay-retry/) | Wait before a read and retry until a new or updated Supabase todo is visible |
 | [`supercontracts-mcp-ngrok/`](./supercontracts-mcp-ngrok/) | Local backend exposed via ngrok/Cloudflare tunnel; full property create/publish flow |
 | [`mcp_guardrail_contracts/`](./mcp_guardrail_contracts/) | GitHub MCP guardrails — allow branches/PRs, block push to `main` |
 | [`approval-workflows/`](./approval-workflows/) | Provider-specific approval examples for GitHub merges and Stripe refunds |
