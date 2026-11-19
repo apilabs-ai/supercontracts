@@ -16,7 +16,7 @@
 #     Identity    PARTIAL   — auth and secret resolution are CORE; agent
 #                             identity and least-privilege principals are
 #                             PROPOSED (§7)
-#     Policy      CORE      — guardrails for MCP tools and skills (§§4-5)
+#     Policy      CORE      — guardrails for MCP tools and Guardrail Profiles (§§4-5)
 #     Approval    PROPOSED  — reachable imperatively via the MCP surface (§9),
 #                             not yet declarable in a contract (§7)
 #     Execution   CORE      — flows, chaining, tests (§3)
@@ -91,7 +91,8 @@ contract:
 # ---------------------------------------------------------------------------
 #   api-contract      HTTP routes, chained flows, tests            §3  [CORE]
 #   guarded-service   MCP/REST policy over an upstream service     §4  [CORE]
-#   skill             Skill Register intent policy                 §5  [CORE]
+#   Guardrail Profiles are policy-only documents, defined in §5; they do not
+#   use the contract envelope.
 #   apptalk-contract  Form-provider → CRM field sync               §6  [EXTENDED]
 #
 # RESERVED — recognized type names, schemas not published here:
@@ -313,6 +314,49 @@ flows:
         inputs:
           order_id: "{create.response.body.order_id}"
 
+# STEP TIMING AND READ RETRIES — [CORE]
+# `wait_before` pauses once before this sequential step. Its value is a positive
+# duration such as `5s` or `1m`, with a maximum of 60 seconds. It may be used
+# on any ordinary HTTP step.
+#
+# `retry_until` repeats an eventually-consistent READ until its own predicate
+# passes. It is not a write retry and MUST be accepted only on GET, HEAD, or
+# OPTIONS routes. `attempts` includes the first check; `delay` is the pause
+# between unsuccessful checks; `timeout` caps the complete retry window.
+# `verify` uses the predicate language in the normative companion and MUST
+# reference the step being retried. `retry_statuses` is optional and permits
+# distinct expected 4xx responses (for example 404 while a new resource
+# appears). Transport retries for temporary read failures are separate runtime
+# behavior and are not configured by this block.
+#
+# Limits: `retry_until.attempts` is 1–20; `delay` and `timeout` are positive;
+# `timeout` is at most 2 minutes.
+#
+#      - step: fetch
+#        action: get_order
+#        wait_before: 5s
+#        retry_until:
+#          attempts: 5
+#          delay: 3s
+#          timeout: 30s
+#          verify: "fetch.response.body.order_id != null"
+#          retry_statuses: [404]
+#
+# PARALLEL READS — [CORE]
+# `parallel_group` starts two to four adjacent, independent HTTP read steps at
+# once. Every member names the same non-empty group. Members MUST be GET, HEAD,
+# or OPTIONS steps; they cannot reference another member of their group and
+# cannot use `wait_before`, `retry_until`, `for_each`, `dedup`, `upsert`, or
+# `run_sql`. The engine preserves YAML result order and waits for the group
+# before running the following step.
+#
+#      - step: list_orders
+#        action: list_orders
+#        parallel_group: account_reads
+#      - step: list_invoices
+#        action: list_invoices
+#        parallel_group: account_reads
+
 # `inputs` keys map onto the route's declared `params` by name, plus the
 # reserved key `body`. A step with no inputs MAY omit the key.
 #
@@ -342,6 +386,9 @@ flows:
 #       number, boolean, array or object. Reaching for braces by habit on a
 #       numeric field silently sends a string.
 
+# See `supercontracts/supercontracts-durable-delay-retry/` and
+# `supercontracts/supercontracts-parallel-reads/` for runnable examples.
+
 # ---------------------------------------------------------------------------
 # 3.6 run — default flow                                                [CORE]
 # ---------------------------------------------------------------------------
@@ -369,6 +416,23 @@ tests:
 #
 # Response status is reachable only through `expect`, never through a
 # predicate. Response headers are not reachable at all. Both are known gaps.
+
+# ---------------------------------------------------------------------------
+# 3.8 execution lifecycle and recovery                              [EXTENDED]
+# ---------------------------------------------------------------------------
+# Execution options are request metadata, not contract YAML keys. A timed
+# contract may be queued and report `queued`, `running`, `waiting_approval`,
+# `passed`, or `failed`; callers poll the run-status API/MCP `get_run` using
+# the returned `run_id`.
+#
+# `resume_from_run_id` is a REST/UI request option for a failed classic
+# contract. It requires the exact unchanged `contract_yaml`, verifies its
+# digest, preserves the contiguous successful prefix, and reruns from the
+# failed step. It is not a field under `flows` and is not currently an input to
+# the public MCP `run_contract` tool.
+#
+# Run evidence MAY include timing, polling attempts, and transport
+# `retry_count`. These are output fields, not author-configured YAML keys.
 
 
 # =============================================================================
@@ -444,12 +508,11 @@ tests:
 
 
 # =============================================================================
-# 5. TYPE: skill  (Skill Register)                                      [CORE]
+# 5. GUARDRAIL PROFILE POLICY YAML                                      [CORE]
 # =============================================================================
-# Policy-only. Maps chat intents onto an upstream MCP server's tools and gates
-# them. Reference: skills/
-#
-#   contract: {format: apilabs.ai, version: "1.0", type: skill}
+# Policy-only. Maps named intents onto an upstream MCP server's tools and gates
+# them. Store this YAML in a Guardrail Profile. Reference: guardrail_profiles/
+# It MUST NOT contain a `contract`, `supercontract`, `tools`, or `service` key.
 #
 #   domain: github.com                # optional; discovery / auto-attach
 #   mcp_endpoint: https://api.githubcopilot.com/mcp/
@@ -471,8 +534,8 @@ tests:
 #   guardrails: ...                   # as §4.1
 #   default: {decision: BLOCK}
 #
-# DEPRECATED: existing skill files carry a bare `version: "1"` at root instead
-# of the §1 envelope. Accepted; SHOULD warn.
+# `version: "1"` at root identifies the policy document version; there is no
+# §1 contract envelope for a Guardrail Profile.
 #
 # ---------------------------------------------------------------------------
 # 5.1 The `action` identifier — normative                               [CORE]
@@ -483,10 +546,10 @@ tests:
 #
 # Declaring intent `create_pull_request` and matching
 # `action == "github.create_pull_request"` matches nothing. Every rule falls
-# through to `default: BLOCK`, and a skill that appears to permit an action
+# through to `default: BLOCK`, and a profile that appears to permit an action
 # silently forbids it.
 #
-# KNOWN CONFORMANCE BUG: skills/github/github-skill.yaml matches "git.push",
+# KNOWN CONFORMANCE BUG: guardrail_profiles/github/github-guardrail-profile.yaml matches "git.push",
 # "github.create_pull_request" and "github.modify_file" against intents
 # declared as git_push, create_pull_request and modify_file. All three rules
 # are dead; the demo blocks everything it advertises. Fix in that file.
@@ -663,8 +726,10 @@ runtime:
 #   Contracts   list_contracts · get_contract · save_contract · run_contract
 #               list_test_runs · get_run · resolve_resource
 #   Guarded     list_guarded_tools · validate_guarded · invoke_guarded
-#   Skills      resolve_skill · list_skills · get_skill · list_skill_tools
-#               run_skill
+#   Guardrail Profiles
+#               resolve_guardrail_profile · list_guardrail_profiles
+#               get_guardrail_profile · list_guardrail_profile_tools
+#               run_guardrail_profile
 #   Approvals   request_approval · get_approval_status · decide_approval
 #
 # Typical flow: list_contracts → get_contract → run_contract → get_run
@@ -676,7 +741,8 @@ runtime:
 # An implementation conforms to SuperContracts 0.10 CORE if it:
 #
 #   1. Accepts all four envelope spellings (§1.2) and dispatches on `type`.
-#   2. Supports api-contract, guarded-service and skill in full (§§3–5).
+#   2. Supports api-contract, guarded-service, and Guardrail Profile policy
+#      YAML in full (§§3–5).
 #   3. Implements the reference and predicate languages per
 #      supercontracts-expression-grammar.md §§1–2, including rule R1
 #      (type-directed numeric segments) and rule R10 (fail before send).

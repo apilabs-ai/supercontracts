@@ -1,3 +1,4 @@
+# Guardrail Profile policy for GitHub MCP.
 version: "1"
 
 domain: github.com

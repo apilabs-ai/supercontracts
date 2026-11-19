@@ -1,13 +1,13 @@
 # SuperContracts Expression Grammar
 
-**Version 0.10 · Status: Draft · Updated 2026-09-09**
+**Version 0.10 · Status: Draft · Updated 2026-11-19**
 
-Normative companion to [`supercontracts-spec.yaml`](./supercontracts-spec.yaml). Licensed
+Normative companion to [`apilabs-supercontracts-spec.yml`](./apilabs-supercontracts-spec.yml). Licensed
 Apache-2.0 with the rest of this repository.
 
 This document defines the two expression languages used in SuperContracts contracts: the
 **reference language** (step chaining) and the **predicate language** (`verify` assertions), plus
-the separate **guardrail condition language** used by `guarded-service` and `skill` contracts.
+the separate **guardrail condition language** used by `guarded-service` contracts and Guardrail Profiles.
 
 Every production below is grounded in expressions that appear in shipping contracts. Where the
 corpus is silent, the rule is marked **PROPOSED** and requires confirmation against engine behavior
@@ -182,11 +182,30 @@ languages in one format with opposite string conventions is a needless trap.
 Recommendation: accept both in both languages, canonicalize on single quotes in documentation.
 Cheap now, expensive after third-party implementations exist.
 
+### 2.5 Timing retry verification
+
+`retry_until.verify` on an API flow step uses this same predicate language. It
+is a single string, not a `verify:` list, and its left-side path MUST begin
+with the step currently being retried:
+
+```yaml
+retry_until:
+  attempts: 5
+  delay: 3s
+  timeout: 30s
+  verify: "fetch.response.body.id != null"
+```
+
+The predicate is evaluated after each successful GET, HEAD, or OPTIONS check.
+It does not add comparison operators, roots, or interpolation syntax to this
+grammar. Timing limits and retry-status rules are contract-step semantics
+specified in the companion specification §3.5.
+
 ---
 
 ## 3. Guardrail condition language
 
-A **separate** language, used by `guarded-service` and `skill` contracts. It does not share paths,
+A **separate** language, used by `guarded-service` contracts and Guardrail Profiles. It does not share paths,
 quoting, or operators with §§1–2, and should not be described as the same thing.
 
 ```ebnf
@@ -210,10 +229,10 @@ when: action == "push" && branch == "main"
 (the invoked intent or tool), plus each key of the call's flattened `args`. Unlike §1 there is no
 dotted path and no step reference.
 
-> **Rule R6.** `action` is the **bare intent key** as declared under `intents:` (skill) or `tools:`
+> **Rule R6.** `action` is the **bare intent key** as declared under `intents:` (Guardrail Profile) or `tools:`
 > (guarded-service). It carries no namespace and no dotted form.
 
-**Known conformance bug.** `skills/github/github-skill.yaml` matches `"git.push"`,
+**Known conformance bug.** `guardrail_profiles/github/github-guardrail-profile.yaml` matches `"git.push"`,
 `"github.create_pull_request"` and `"github.modify_file"` against intents declared as `git_push`,
 `create_pull_request` and `modify_file`. No rule ever matches, every call falls to
 `default: BLOCK`, and the demo blocks all three actions it advertises as allowed. Fix in that file.
@@ -234,7 +253,7 @@ matters.
 > matches, `default.decision` applies. `default` MUST be present, and MUST be `BLOCK` for any
 > contract bound to a production system.
 
-Order-dependence is load-bearing. `skills/supabse/supabase.yaml` is correct only because
+Order-dependence is load-bearing. `guardrail_profiles/supabse/supabase-guardrail-profile.yaml` is correct only because
 `block_customer_pii` precedes `allow_safe_customer_data`; swapping the two silently permits reading
 `ssn`. An implementation that reorders, parallelizes or de-duplicates rules breaks that contract
 with no error surfaced.
@@ -364,7 +383,7 @@ false compatibility:
    `"create.response.body.id"` a bare reference or a literal string? Both spellings appear in
    practice, and they cannot both be right.
 2. **Validator.** Rules R6, R8, R9, `E_STEP_ORDER` and `E_PREDICATE_SYNTAX` are statically
-   checkable. A validator enforcing only those would catch the GitHub skill bug (§3) automatically.
+   checkable. A validator enforcing only those would catch the GitHub Guardrail Profile bug (§3) automatically.
 3. **Conformance corpus** — small contracts, each exercising one rule, with expected outcomes. This
    is what makes an independent implementation verifiable, and what turns this document from prose
    into a specification. Prerequisite for 1.0.

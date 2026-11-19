@@ -1,0 +1,64 @@
+# Replace the placeholder before running. See README.md for setup.
+api:
+  name: GitHub API
+  version: "2022-11-28"
+  base_url: https://api.github.com
+
+auth:
+  type: bearer
+  in: header
+  secret_arn: arn:apilabs:secret:YOUR_GITHUB_TOKEN_SECRET_ID
+
+models:
+  GitHubRepository:
+    fields:
+      id: integer
+      name: string
+      full_name: string
+  GitHubRepositoryList:
+    type: array
+    items: GitHubRepository
+  GitHubNotification:
+    fields:
+      id: string
+      reason: string
+  GitHubNotificationList:
+    type: array
+    items: GitHubNotification
+
+routes:
+  list_repositories:
+    method: GET
+    path: /user/repos
+    headers:
+      Accept: application/vnd.github+json
+    response:
+      200: GitHubRepositoryList
+
+  list_notifications:
+    method: GET
+    path: /notifications
+    headers:
+      Accept: application/vnd.github+json
+    response:
+      200: GitHubNotificationList
+
+flows:
+  inspect_account:
+    description: Fetch independent account data concurrently.
+    steps:
+      - step: repositories
+        action: list_repositories
+        parallel_group: account_reads
+      - step: notifications
+        action: list_notifications
+        parallel_group: account_reads
+
+tests:
+  inspect_account:
+    execute: inspect_account
+    expect:
+      repositories: 200
+      notifications: 200
+
+run: inspect_account
