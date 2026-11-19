@@ -103,6 +103,20 @@ Define routes, chain response data between steps, assert status codes and fields
 - [Supabase API testing](./api-testing-supercontracts/supabase-api-testing/)
 - [Supabase CRUD workflow](./supercontracts/%20supabase-crud-local-contracts/)
 - [Durable delay and retry workflow](./supercontracts/supercontracts-durable-delay-retry/)
+- [Parallel read workflow](./supercontracts/supercontracts-parallel-reads/)
+
+### Reliable execution and recovery
+
+Use `wait_before` and `retry_until` when a read must wait for an eventually
+consistent write. Use `parallel_group` only for two to four adjacent,
+independent GET/HEAD/OPTIONS steps. Timed runs can return a `run_id` in
+`queued` or `running` state; inspect them with `get_run`.
+
+For a failed classic contract, the SuperContracts UI/REST run request accepts
+`resume_from_run_id` with the exact unchanged YAML. It preserves the completed
+prefix and reruns from the failed step. This is request metadata, not YAML, and
+is not currently accepted by the public MCP `run_contract` tool. Run evidence
+can report duration, polling attempts, and `retry_count`.
 
 ### SaaS API workflows
 

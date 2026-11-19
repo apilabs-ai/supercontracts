@@ -1,8 +1,8 @@
 # SuperContracts Expression Grammar
 
-**Version 0.10 · Status: Draft · Updated 2026-09-09**
+**Version 0.10 · Status: Draft · Updated 2026-11-19**
 
-Normative companion to [`supercontracts-spec.yaml`](./supercontracts-spec.yaml). Licensed
+Normative companion to [`apilabs-supercontracts-spec.yml`](./apilabs-supercontracts-spec.yml). Licensed
 Apache-2.0 with the rest of this repository.
 
 This document defines the two expression languages used in SuperContracts contracts: the
@@ -181,6 +181,25 @@ languages in one format with opposite string conventions is a needless trap.
 
 Recommendation: accept both in both languages, canonicalize on single quotes in documentation.
 Cheap now, expensive after third-party implementations exist.
+
+### 2.5 Timing retry verification
+
+`retry_until.verify` on an API flow step uses this same predicate language. It
+is a single string, not a `verify:` list, and its left-side path MUST begin
+with the step currently being retried:
+
+```yaml
+retry_until:
+  attempts: 5
+  delay: 3s
+  timeout: 30s
+  verify: "fetch.response.body.id != null"
+```
+
+The predicate is evaluated after each successful GET, HEAD, or OPTIONS check.
+It does not add comparison operators, roots, or interpolation syntax to this
+grammar. Timing limits and retry-status rules are contract-step semantics
+specified in the companion specification §3.5.
 
 ---
 

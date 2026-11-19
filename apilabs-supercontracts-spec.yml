@@ -313,6 +313,49 @@ flows:
         inputs:
           order_id: "{create.response.body.order_id}"
 
+# STEP TIMING AND READ RETRIES — [CORE]
+# `wait_before` pauses once before this sequential step. Its value is a positive
+# duration such as `5s` or `1m`, with a maximum of 60 seconds. It may be used
+# on any ordinary HTTP step.
+#
+# `retry_until` repeats an eventually-consistent READ until its own predicate
+# passes. It is not a write retry and MUST be accepted only on GET, HEAD, or
+# OPTIONS routes. `attempts` includes the first check; `delay` is the pause
+# between unsuccessful checks; `timeout` caps the complete retry window.
+# `verify` uses the predicate language in the normative companion and MUST
+# reference the step being retried. `retry_statuses` is optional and permits
+# distinct expected 4xx responses (for example 404 while a new resource
+# appears). Transport retries for temporary read failures are separate runtime
+# behavior and are not configured by this block.
+#
+# Limits: `retry_until.attempts` is 1–20; `delay` and `timeout` are positive;
+# `timeout` is at most 2 minutes.
+#
+#      - step: fetch
+#        action: get_order
+#        wait_before: 5s
+#        retry_until:
+#          attempts: 5
+#          delay: 3s
+#          timeout: 30s
+#          verify: "fetch.response.body.order_id != null"
+#          retry_statuses: [404]
+#
+# PARALLEL READS — [CORE]
+# `parallel_group` starts two to four adjacent, independent HTTP read steps at
+# once. Every member names the same non-empty group. Members MUST be GET, HEAD,
+# or OPTIONS steps; they cannot reference another member of their group and
+# cannot use `wait_before`, `retry_until`, `for_each`, `dedup`, `upsert`, or
+# `run_sql`. The engine preserves YAML result order and waits for the group
+# before running the following step.
+#
+#      - step: list_orders
+#        action: list_orders
+#        parallel_group: account_reads
+#      - step: list_invoices
+#        action: list_invoices
+#        parallel_group: account_reads
+
 # `inputs` keys map onto the route's declared `params` by name, plus the
 # reserved key `body`. A step with no inputs MAY omit the key.
 #
@@ -342,6 +385,9 @@ flows:
 #       number, boolean, array or object. Reaching for braces by habit on a
 #       numeric field silently sends a string.
 
+# See `supercontracts/supercontracts-durable-delay-retry/` and
+# `supercontracts/supercontracts-parallel-reads/` for runnable examples.
+
 # ---------------------------------------------------------------------------
 # 3.6 run — default flow                                                [CORE]
 # ---------------------------------------------------------------------------
@@ -369,6 +415,23 @@ tests:
 #
 # Response status is reachable only through `expect`, never through a
 # predicate. Response headers are not reachable at all. Both are known gaps.
+
+# ---------------------------------------------------------------------------
+# 3.8 execution lifecycle and recovery                              [EXTENDED]
+# ---------------------------------------------------------------------------
+# Execution options are request metadata, not contract YAML keys. A timed
+# contract may be queued and report `queued`, `running`, `waiting_approval`,
+# `passed`, or `failed`; callers poll the run-status API/MCP `get_run` using
+# the returned `run_id`.
+#
+# `resume_from_run_id` is a REST/UI request option for a failed classic
+# contract. It requires the exact unchanged `contract_yaml`, verifies its
+# digest, preserves the contiguous successful prefix, and reruns from the
+# failed step. It is not a field under `flows` and is not currently an input to
+# the public MCP `run_contract` tool.
+#
+# Run evidence MAY include timing, polling attempts, and transport
+# `retry_count`. These are output fields, not author-configured YAML keys.
 
 
 # =============================================================================
