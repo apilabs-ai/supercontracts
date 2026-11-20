@@ -7,7 +7,7 @@ Apache-2.0 with the rest of this repository.
 
 This document defines the two expression languages used in SuperContracts contracts: the
 **reference language** (step chaining) and the **predicate language** (`verify` assertions), plus
-the separate **guardrail condition language** used by `guarded-service` contracts and Guardrail Profiles.
+the separate **guardrail condition language** used by `guarded-service` contracts and Guardrails.
 
 Every production below is grounded in expressions that appear in shipping contracts. Where the
 corpus is silent, the rule is marked **PROPOSED** and requires confirmation against engine behavior
@@ -205,7 +205,7 @@ specified in the companion specification §3.5.
 
 ## 3. Guardrail condition language
 
-A **separate** language, used by `guarded-service` contracts and Guardrail Profiles. It does not share paths,
+A **separate** language, used by `guarded-service` contracts and Guardrails. It does not share paths,
 quoting, or operators with §§1–2, and should not be described as the same thing.
 
 ```ebnf
@@ -229,10 +229,10 @@ when: action == "push" && branch == "main"
 (the invoked intent or tool), plus each key of the call's flattened `args`. Unlike §1 there is no
 dotted path and no step reference.
 
-> **Rule R6.** `action` is the **bare intent key** as declared under `intents:` (Guardrail Profile) or `tools:`
+> **Rule R6.** `action` is the **bare intent key** as declared under `intents:` (Guardrail) or `tools:`
 > (guarded-service). It carries no namespace and no dotted form.
 
-**Known conformance bug.** `guardrail_profiles/github/github-guardrail-profile.yaml` matches `"git.push"`,
+**Known conformance bug.** `guardrails/github/github-guardrail.yaml` matches `"git.push"`,
 `"github.create_pull_request"` and `"github.modify_file"` against intents declared as `git_push`,
 `create_pull_request` and `modify_file`. No rule ever matches, every call falls to
 `default: BLOCK`, and the demo blocks all three actions it advertises as allowed. Fix in that file.
@@ -253,7 +253,7 @@ matters.
 > matches, `default.decision` applies. `default` MUST be present, and MUST be `BLOCK` for any
 > contract bound to a production system.
 
-Order-dependence is load-bearing. `guardrail_profiles/supabse/supabase-guardrail-profile.yaml` is correct only because
+Order-dependence is load-bearing. `guardrails/supabse/supabase-guardrail.yaml` is correct only because
 `block_customer_pii` precedes `allow_safe_customer_data`; swapping the two silently permits reading
 `ssn`. An implementation that reorders, parallelizes or de-duplicates rules breaks that contract
 with no error surfaced.
@@ -383,7 +383,7 @@ false compatibility:
    `"create.response.body.id"` a bare reference or a literal string? Both spellings appear in
    practice, and they cannot both be right.
 2. **Validator.** Rules R6, R8, R9, `E_STEP_ORDER` and `E_PREDICATE_SYNTAX` are statically
-   checkable. A validator enforcing only those would catch the GitHub Guardrail Profile bug (§3) automatically.
+   checkable. A validator enforcing only those would catch the GitHub Guardrail bug (§3) automatically.
 3. **Conformance corpus** — small contracts, each exercising one rule, with expected outcomes. This
    is what makes an independent implementation verifiable, and what turns this document from prose
    into a specification. Prerequisite for 1.0.

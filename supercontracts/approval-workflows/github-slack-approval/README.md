@@ -1,12 +1,12 @@
 # GitHub Slack Approval Demo
 
-A SuperContracts Guardrail Profile that allows GitHub pull-request reads and routes merges to Slack for maintainer approval.
+A SuperContracts Guardrail that allows GitHub pull-request reads and routes merges to Slack for maintainer approval.
 
 ---
 
 ## What the demo proves
 
-GitHub is exercised through a Guardrail Profile, not as a raw MCP tool:
+GitHub is exercised through a Guardrail, not as a raw MCP tool:
 
 > List and read pull requests immediately; merge only after Slack approval tied to the approved commit SHA.
 
@@ -24,11 +24,11 @@ github-slack-approval/
 
 ---
 
-## How the Guardrail Profile is structured
+## How the Guardrail is structured
 
 | Section | Role |
 | --- | --- |
-| `domain` | Guardrail Profile domain (`github.com`) |
+| `domain` | Guardrail domain (`github.com`) |
 | `mcp_endpoint` | GitHub Copilot MCP endpoint |
 | `auth` | Bearer credential referenced from the Auth Vault |
 | `intents` | Guarded action to GitHub MCP tool mapping |
@@ -41,7 +41,7 @@ github-slack-approval/
 | `read_pull_request` | `pull_request_read` | ALLOW |
 | `merge_pull_request` | `merge_pull_request` | BLOCK invalid or unbound requests; otherwise require Slack approval |
 
-`run_guardrail_profile` takes the intent name as `action`, not the upstream MCP tool name.
+`run_guardrail` takes the intent name as `action`, not the upstream MCP tool name.
 
 ---
 
@@ -63,9 +63,9 @@ Replace the placeholder ARN with the ARN for your GitHub credential. Do not comm
 ## Setup
 
 1. Configure the Slack approval provider for your workspace.
-2. Register the profile in **Guardrail Profiles** on [apilabs.ai](https://apilabs.ai) with a name such as `github-slack-approval`.
-3. Paste `github-slack-approval.yaml` as the Guardrail Profile YAML and replace the placeholder `secret_arn`.
-4. Confirm the `list_pull_requests`, `read_pull_request`, and `merge_pull_request` intents are available, then enable the profile.
+2. Register the guardrail in **Guardrails** on [apilabs.ai](https://apilabs.ai) with a name such as `github-slack-approval`.
+3. Paste `github-slack-approval.yaml` as the Guardrail YAML and replace the placeholder `secret_arn`.
+4. Confirm the `list_pull_requests`, `read_pull_request`, and `merge_pull_request` intents are available, then enable the guardrail.
 
 ---
 
@@ -73,9 +73,9 @@ Replace the placeholder ARN with the ARN for your GitHub credential. Do not comm
 
 With SuperContracts MCP connected:
 
-1. Use `list_guardrail_profiles` and select `github-slack-approval`.
-2. Use `get_guardrail_profile` and `list_guardrail_profile_tools` to inspect the saved policy and intents.
-3. Call `run_guardrail_profile` with an intent name. Use `mode: validate` to check the policy without executing.
+1. Use `list_guardrails` and select `github-slack-approval`.
+2. Use `get_guardrail` and `list_guardrail_tools` to inspect the saved policy and intents.
+3. Call `run_guardrail` with an intent name. Use `mode: validate` to check the policy without executing.
 4. For a merge, wait for the Slack decision and resume the same pending request after approval.
 
 Examples:

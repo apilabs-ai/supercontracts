@@ -16,7 +16,7 @@
 #     Identity    PARTIAL   — auth and secret resolution are CORE; agent
 #                             identity and least-privilege principals are
 #                             PROPOSED (§7)
-#     Policy      CORE      — guardrails for MCP tools and Guardrail Profiles (§§4-5)
+#     Policy      CORE      — guardrails for MCP tools and Guardrails (§§4-5)
 #     Approval    PROPOSED  — reachable imperatively via the MCP surface (§9),
 #                             not yet declarable in a contract (§7)
 #     Execution   CORE      — flows, chaining, tests (§3)
@@ -91,7 +91,7 @@ contract:
 # ---------------------------------------------------------------------------
 #   api-contract      HTTP routes, chained flows, tests            §3  [CORE]
 #   guarded-service   MCP/REST policy over an upstream service     §4  [CORE]
-#   Guardrail Profiles are policy-only documents, defined in §5; they do not
+#   Guardrails are policy-only documents, defined in §5; they do not
 #   use the contract envelope.
 #   apptalk-contract  Form-provider → CRM field sync               §6  [EXTENDED]
 #
@@ -508,10 +508,10 @@ tests:
 
 
 # =============================================================================
-# 5. GUARDRAIL PROFILE POLICY YAML                                      [CORE]
+# 5. GUARDRAIL POLICY YAML                                              [CORE]
 # =============================================================================
 # Policy-only. Maps named intents onto an upstream MCP server's tools and gates
-# them. Store this YAML in a Guardrail Profile. Reference: guardrail_profiles/
+# them. Store this YAML in a Guardrail. Reference: guardrails/
 # It MUST NOT contain a `contract`, `supercontract`, `tools`, or `service` key.
 #
 #   domain: github.com                # optional; discovery / auto-attach
@@ -535,7 +535,7 @@ tests:
 #   default: {decision: BLOCK}
 #
 # `version: "1"` at root identifies the policy document version; there is no
-# §1 contract envelope for a Guardrail Profile.
+# §1 contract envelope for a Guardrail.
 #
 # ---------------------------------------------------------------------------
 # 5.1 The `action` identifier — normative                               [CORE]
@@ -549,7 +549,7 @@ tests:
 # through to `default: BLOCK`, and a profile that appears to permit an action
 # silently forbids it.
 #
-# KNOWN CONFORMANCE BUG: guardrail_profiles/github/github-guardrail-profile.yaml matches "git.push",
+# KNOWN CONFORMANCE BUG: guardrails/github/github-guardrail.yaml matches "git.push",
 # "github.create_pull_request" and "github.modify_file" against intents
 # declared as git_push, create_pull_request and modify_file. All three rules
 # are dead; the demo blocks everything it advertises. Fix in that file.
@@ -726,10 +726,10 @@ runtime:
 #   Contracts   list_contracts · get_contract · save_contract · run_contract
 #               list_test_runs · get_run · resolve_resource
 #   Guarded     list_guarded_tools · validate_guarded · invoke_guarded
-#   Guardrail Profiles
-#               resolve_guardrail_profile · list_guardrail_profiles
-#               get_guardrail_profile · list_guardrail_profile_tools
-#               run_guardrail_profile
+#   Guardrails
+#               resolve_guardrail · list_guardrails
+#               get_guardrail · list_guardrail_tools
+#               run_guardrail
 #   Approvals   request_approval · get_approval_status · decide_approval
 #
 # Typical flow: list_contracts → get_contract → run_contract → get_run
@@ -741,7 +741,7 @@ runtime:
 # An implementation conforms to SuperContracts 0.10 CORE if it:
 #
 #   1. Accepts all four envelope spellings (§1.2) and dispatches on `type`.
-#   2. Supports api-contract, guarded-service, and Guardrail Profile policy
+#   2. Supports api-contract, guarded-service, and Guardrail policy
 #      YAML in full (§§3–5).
 #   3. Implements the reference and predicate languages per
 #      supercontracts-expression-grammar.md §§1–2, including rule R1

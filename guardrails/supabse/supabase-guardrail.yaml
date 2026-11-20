@@ -1,4 +1,4 @@
-# Guardrail Profile policy for Supabase MCP.
+# Guardrail policy for Supabase MCP.
 version: "1"
 
 mcp_endpoint: https://mcp.supabase.com/mcp?project_ref=mwpciuxwhmvdkygaezxi

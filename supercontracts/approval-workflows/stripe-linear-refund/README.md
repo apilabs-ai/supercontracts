@@ -1,12 +1,12 @@
 # Stripe Linear Refund Approval Demo
 
-A SuperContracts Guardrail Profile that allows small Stripe refunds and routes refunds above $500 to Linear for approval.
+A SuperContracts Guardrail that allows small Stripe refunds and routes refunds above $500 to Linear for approval.
 
 ---
 
 ## What the demo proves
 
-Stripe is exercised through a Guardrail Profile, not as a raw MCP tool:
+Stripe is exercised through a Guardrail, not as a raw MCP tool:
 
 > List payments safely, allow refunds up to $500, and require Linear approval for larger refunds.
 
@@ -24,11 +24,11 @@ stripe-linear-refund/
 
 ---
 
-## How the Guardrail Profile is structured
+## How the Guardrail is structured
 
 | Section | Role |
 | --- | --- |
-| `domain` | Guardrail Profile domain (`stripe.com`) |
+| `domain` | Guardrail domain (`stripe.com`) |
 | `mcp_endpoint` | Stripe MCP endpoint |
 | `auth` | Bearer credential referenced from the Auth Vault |
 | `intents` | Guarded action to Stripe MCP operation mapping |
@@ -40,7 +40,7 @@ stripe-linear-refund/
 | `list_payments` | `GetPaymentIntents` | ALLOW |
 | `create_refund` | `PostRefunds` | BLOCK non-positive amounts; ALLOW up to $500; otherwise require Linear approval |
 
-`run_guardrail_profile` takes the intent name as `action` (`create_refund`), not the upstream tool name (`stripe_api_write`).
+`run_guardrail` takes the intent name as `action` (`create_refund`), not the upstream tool name (`stripe_api_write`).
 
 ---
 
@@ -62,9 +62,9 @@ Replace the placeholder ARN with the ARN for your Stripe credential. Do not comm
 ## Setup
 
 1. Configure the Linear approval provider and select the destination team.
-2. Register the profile in **Guardrail Profiles** on [apilabs.ai](https://apilabs.ai) with a name such as `stripe-linear-refund`.
-3. Paste `stripe-linear-refund.yaml` as the Guardrail Profile YAML and replace the placeholder `secret_arn`.
-4. Confirm the `list_payments` and `create_refund` intents are available, then enable the profile.
+2. Register the guardrail in **Guardrails** on [apilabs.ai](https://apilabs.ai) with a name such as `stripe-linear-refund`.
+3. Paste `stripe-linear-refund.yaml` as the Guardrail YAML and replace the placeholder `secret_arn`.
+4. Confirm the `list_payments` and `create_refund` intents are available, then enable the guardrail.
 
 ---
 
@@ -72,9 +72,9 @@ Replace the placeholder ARN with the ARN for your Stripe credential. Do not comm
 
 With SuperContracts MCP connected:
 
-1. Use `list_guardrail_profiles` and select `stripe-linear-refund`.
-2. Use `get_guardrail_profile` and `list_guardrail_profile_tools` to inspect the saved policy and intents.
-3. Call `run_guardrail_profile` with an intent name. Use `mode: validate` to check the policy without executing.
+1. Use `list_guardrails` and select `stripe-linear-refund`.
+2. Use `get_guardrail` and `list_guardrail_tools` to inspect the saved policy and intents.
+3. Call `run_guardrail` with an intent name. Use `mode: validate` to check the policy without executing.
 4. For a refund above $500, wait for the Linear decision and resume the same pending request after approval.
 
 Examples:
