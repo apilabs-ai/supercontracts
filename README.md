@@ -86,7 +86,7 @@ Start with the [Quick Start overview](./quick_start/). It takes you from install
 Place deterministic ALLOW/BLOCK policy between an agent and an MCP or API tool. Use default-deny rules, constrain arguments, and validate an action without executing it.
 
 - [GitHub MCP guardrail example](./supercontracts/mcp_guardrail_contracts/)
-- [GitHub, Stripe, and Supabase Guardrail Profile policies](./guardrail_profiles/)
+- [GitHub, Stripe, and Supabase Guardrail policies](./guardrails/)
 
 ### Approval workflows
 
@@ -133,7 +133,7 @@ Compose guarded workflows across APIs and MCP providers without embedding provid
 | Execution | `run_contract`, `validate_action`, `get_run`, `list_test_runs` | Validate without HTTP side effects, run tests/workflows, and inspect evidence |
 | Resources | `resolve_resource` | Resolve apilabs-ai resource metadata without exposing secret values |
 | Guardrails | `list_guarded_tools`, `validate_guarded`, `invoke_guarded` | Inspect policy, validate without side effects, or execute after evaluation |
-| Guardrail Profiles | `resolve_guardrail_profile`, `list_guardrail_profiles`, `get_guardrail_profile`, `list_guardrail_profile_tools`, `run_guardrail_profile` | Discover and run reusable provider policies by intent |
+| Guardrails | `resolve_guardrail`, `list_guardrails`, `get_guardrail`, `list_guardrail_tools`, `run_guardrail` | Discover and run reusable provider policies by intent |
 | Approvals | `request_approval`, `get_approval_status`, `decide_approval` | Create, inspect, and decide approval requests |
 
 For saved API contracts, use this sequence:
@@ -144,13 +144,13 @@ list_contracts → get_contract → run_contract → get_run
 
 Pass the complete `contract_yaml` returned by `get_contract` and the same `connection_id` to `run_contract`. This preserves the saved contract context and its run artifacts.
 
-For Guardrail Profile actions, use:
+For Guardrail actions, use:
 
 ```text
-resolve_guardrail_profile → get_guardrail_profile → list_guardrail_profile_tools → run_guardrail_profile
+resolve_guardrail → get_guardrail → list_guardrail_tools → run_guardrail
 ```
 
-`run_guardrail_profile.action` is the profile's intent name—not the upstream provider tool name. Use `mode: validate` before enabling side effects.
+`run_guardrail.action` is the guardrail's intent name—not the upstream provider tool name. Use `mode: validate` before enabling side effects.
 
 ## Runtime evidence
 
@@ -169,7 +169,7 @@ When a saved API contract is run with its `connection_id`, artifacts can include
 | [`quick_start/`](./quick_start/) | Four-part Quick Start plus GitHub, Gmail, and Google Calendar contracts |
 | [`ai_clients/`](./ai_clients/) | Cursor, Claude Code, Codex, and VS Code / GitHub Copilot setup |
 | [`supercontracts/`](./supercontracts/) | Developer guide, guarded-service contracts, approvals, and workflow examples |
-| [`guardrail_profiles/`](./guardrail_profiles/) | Reusable GitHub, Stripe, and Supabase Guardrail Profile policies |
+| [`guardrails/`](./guardrails/) | Reusable GitHub, Stripe, and Supabase Guardrail policies |
 | [`plugins/supercontracts-mcp/`](./plugins/supercontracts-mcp/) | Portable MCP plugin and reusable client workflow skills |
 | [`api-testing-supercontracts/`](./api-testing-supercontracts/) | Provider-focused API test suites |
 | [`mcp_downloads/`](./mcp_downloads/) | Optional local MCP bridge downloads and setup guide |
@@ -211,7 +211,7 @@ The demo shows a contract run from an AI IDE, saved response/run artifacts, and 
 
 - Never commit MCP tokens, provider access tokens, API keys, OAuth credentials, approval tokens, or reusable file ARNs.
 - Use Auth Vault secret references in contracts.
-- Prefer `validate_guarded` or `run_guardrail_profile` with `mode: validate` before real side effects.
+- Prefer `validate_guarded` or `run_guardrail` with `mode: validate` before real side effects.
 - Use owned or disposable infrastructure for demos.
 - Review contract scope and default-deny behavior before enabling a workflow.
 

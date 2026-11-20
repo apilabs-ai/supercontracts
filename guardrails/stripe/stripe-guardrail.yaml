@@ -1,4 +1,4 @@
-# Guardrail Profile policy for Stripe MCP.
+# Guardrail policy for Stripe MCP.
 version: "1"
 
 mcp_endpoint: https://mcp.stripe.com
